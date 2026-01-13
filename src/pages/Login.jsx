@@ -1,14 +1,10 @@
-// const Login = () => {
-// return <>Im login </>
-// }
-
-// export default Login
-
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 import { 
-  Box, Button, TextField, Typography, Container, Paper, Alert 
+  Box, Typography, Container, Paper, Alert 
 } from '@mui/material';
+import TextField from "../components/TextField";
+import Button from "../components/Button";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -30,16 +26,17 @@ const Login = () => {
     if (email === dummyUser && password === dummyPass) {
       setError(false);
       alert("Success! You are logged in."); // Optional visual feedback
-      navigate('/dashboard'); // Move to the car rental dashboard
+      navigate('/'); // Move to the car rental home
     } else {
       setError(true); // Show the "Incorrect Creds" message
     }
   };
 
-  const handleSignUp = (e) => {
-    e.preventDefault();
-    navigate('/signup'); // Move to the car rental dashboard
-  };
+
+  const buttonOnclick = (e) => {
+    navigate('/'); // Move to the car rental dashboard
+  }
+
   return (
     <Container component="main" maxWidth="xs">
       <Box sx={{ mt: 8 }}>
@@ -48,7 +45,6 @@ const Login = () => {
             Car Rental Login
           </Typography>
 
-          {/* Show error alert if credentials fail */}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               Incorrect credentials. Please try again!
@@ -57,41 +53,38 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             <TextField
-              margin="normal"
-              fullWidth
-              label="Email Address (admin@car.com)"
+              label="Email Address"
               name="email"
-              autoComplete=""
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
             <TextField
-              margin="normal"
-              fullWidth
-              label="Password (password123)"
+              label="Password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
             <Button
-              type="submit"
-              fullWidth
+              text = "SignIn"
               variant="contained"
-              size="large"
-              sx={{ mt: 3, mb: 2, textTransform: 'none' }}
+              onClick= {buttonOnclick}
             >
-              Sign In
             </Button>
-          </form>
+          </form>          
           
           <Typography variant="body2" color="text.secondary" align="center">
-            Hint: Use <b>admin@car.com</b> / <b>password123</b>
-          </Typography>
-            <Typography variant="body2" color="text.secondary" align="center">
-            New User? <Button onClick={handleSignUp}>SignUp</Button> here
-          </Typography>
+              New User?{' '}
+              <Link 
+                component={Link} 
+                to="/signup" 
+                sx={{ textDecoration: 'none', fontWeight: 'bold' }}
+              >
+                SignUp
+              </Link>{' '}
+              here
+            </Typography>
         </Paper>
       </Box>
     </Container>
