@@ -1,10 +1,18 @@
-import React, { useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
-import { Avatar, TextField, Grid, Box, Typography, Container, Link } from "@mui/material";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import Container from "../components/Container";
+import Box from "../components/Box";
+import Paper from "../components/Paper";
+import Typography from "../components/Typography";
+import Link from "../components/Link";
+import TextField from "../components/TextField";
 import Button from "../components/Button";
+import Alert from "../components/Alert";
 
 const Signup = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -12,55 +20,117 @@ const Signup = () => {
     confirmPassword: ""
   });
 
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
+    setSuccess("");
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSignup = () => {
-    console.log("Signup clicked:", formData);
+  // Simple validations
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim());
+  const passwordValid = formData.password.length >= 8;
+  const passwordsMatch = formData.password === formData.confirmPassword;
+
+  const formValid =
+    formData.name.trim() &&
+    formData.email.trim() &&
+    emailValid &&
+    passwordValid &&
+    passwordsMatch;
+
+  const handleSignup = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError("Please fill all fields.");
+      return;
+    }
+    if (!emailValid) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (!passwordValid) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (!passwordsMatch) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setIsLoading(true);
+    await new Promise((r) => setTimeout(r, 700)); // fake API delay
+
+    setIsLoading(false);
+    setSuccess("Signup successful! Please login.");
+    setTimeout(() => navigate("/login"), 800);
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <h1 style={{ color: "red" }}>SIGNUP PAGE WORKING</h1>
+    <Container>
+      <Box sx={{ mt: 8 }}>
+        <Paper>
+          <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
+            Car Rental Signup
+          </Typography>
 
-      <Box sx={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
-          <DirectionsCarIcon />
-        </Avatar>
+          <Alert severity="error" text={error} />
+          <Alert severity="success" text={success} />
 
-        <Typography component="h1" variant="h5">
-          Car Rental Signup
-        </Typography>
+          <TextField
+            label="Full Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
 
-        <Box sx={{ mt: 3, width: "100%" }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField fullWidth required label="Full Name" name="name" value={formData.name} onChange={handleChange} />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField fullWidth required label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField fullWidth required label="Password" name="password" type="password" value={formData.password} onChange={handleChange} />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField fullWidth required label="Confirm Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} />
-            </Grid>
-          </Grid>
+          <TextField
+            label="Email Address"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            helperText={formData.email && !emailValid ? "Example: name@email.com" : ""}
+          />
 
-          <Box sx={{ mt: 3 }}>
-            <Button text="Signup" onClick={handleSignup} />
-          </Box>
+          {/* Password toggle handled INSIDE TextField */}
+          <TextField
+            label="Password (min 8 chars)"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            helperText={formData.password && !passwordValid ? "Minimum 8 characters." : ""}
+          />
 
-          <Grid container justifyContent="flex-end" sx={{ mt: 2 }}>
-            <Grid item>
-              <Link component={RouterLink} to="/login" variant="body2">
-                Already have an account? Sign in
-              </Link>
-            </Grid>
-          </Grid>
-        </Box>
+          <TextField
+            label="Confirm Password"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            error={formData.confirmPassword && !passwordsMatch}
+            helperText={formData.confirmPassword && !passwordsMatch ? "Passwords must match." : ""}
+          />
+
+          <Button
+            text={isLoading ? "Creating account..." : "SignUp"}
+            onClick={handleSignup}
+            disabled={!formValid || isLoading}
+          />
+
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            Already have an account? <Link to="/login">Sign in</Link>
+          </Typography>
+        </Paper>
       </Box>
     </Container>
   );
