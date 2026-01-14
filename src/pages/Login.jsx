@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate,Link } from 'react-router-dom';
-import { 
-  Box, Typography, Container, Paper, Alert 
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  Box, Typography, Container, Paper, Alert
 } from '@mui/material';
-import TextField from "../components/TextField";
-import Button from "../components/Button";
+import TextField from '../components/common/TextField'
+import Button from "../components/common/Button";
 
 const Login = () => {
   const navigate = useNavigate();
-  
+
   // State for form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // State for error messages
   const [error, setError] = useState(false);
 
@@ -67,24 +67,24 @@ const Login = () => {
               required
             />
             <Button
-              text = "SignIn"
+              text="SignIn"
               variant="contained"
-              onClick= {buttonOnclick}
+              onClick={buttonOnclick}
             >
             </Button>
-          </form>          
-          
+          </form>
+
           <Typography variant="body2" color="text.secondary" align="center">
-              New User?{' '}
-              <Link 
-                component={Link} 
-                to="/signup" 
-                sx={{ textDecoration: 'none', fontWeight: 'bold' }}
-              >
-                SignUp
-              </Link>{' '}
-              here
-            </Typography>
+            New User?{' '}
+            <Link
+              component={Link}
+              to="/signup"
+              sx={{ textDecoration: 'none', fontWeight: 'bold' }}
+            >
+              SignUp
+            </Link>{' '}
+            here
+          </Typography>
         </Paper>
       </Box>
     </Container>

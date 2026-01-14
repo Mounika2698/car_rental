@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import Container from "../components/Container";
-import Box from "../components/Box";
-import Paper from "../components/Paper";
-import Typography from "../components/Typography";
-import Link from "../components/Link";
-import TextField from "../components/TextField";
-import Button from "../components/Button";
-import Alert from "../components/Alert";
+import {
+  Container,
+  Box,
+  Paper,
+  Typography,
+  Link,
+  TextField,
+  Button,
+  Alert
+} from "../components/index";
 
 const Signup = () => {
   const navigate = useNavigate();
