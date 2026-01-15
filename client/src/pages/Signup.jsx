@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 
 import {
   Container,
@@ -11,9 +12,11 @@ import {
   Button,
   Alert
 } from "../components/index";
+import { signup } from "../redux/slice/authSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -70,6 +73,7 @@ const Signup = () => {
 
     setIsLoading(false);
     setSuccess("Signup successful! Please login.");
+    dispatch(signup(formData))
     setTimeout(() => navigate("/login"), 800);
   };
 
