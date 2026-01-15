@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 
 import {
   Container,
@@ -12,9 +13,11 @@ import {
   Alert,
   Tooltip
 } from "../components/index";
+import { signup } from "../redux/slice/authSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch()
 
   // ✅ TEMP: Demo "existing emails" list (replace with backend later)
   const existingEmails = ["admin@car.com", "test@car.com"];
@@ -140,6 +143,8 @@ const Signup = () => {
 
     setSuccess("Signup successful! Please login.");
     setTimeout(() => navigate("/login"), 1200);
+    dispatch(signup(formData))
+   
   };
 
   return (
