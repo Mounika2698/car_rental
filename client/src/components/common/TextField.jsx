@@ -5,17 +5,16 @@ import IconButton from "@mui/material/IconButton";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-/**
- * Reusable TextField wrapper
- * - fullWidth by default
- * - consistent spacing
- * - supports helperText, error, disabled, InputProps, etc.
- * - password fields automatically get show/hide toggle
- */
 const TextField = ({
+  label,
+  name,
+  value,
+  onChange,
   type = "text",
-  sx = {},
-  ...props
+  required = false,
+  error = false,
+  helperText = "",
+  disabled = false
 }) => {
   const isPassword = type === "password";
   const [showPassword, setShowPassword] = useState(false);
@@ -23,18 +22,21 @@ const TextField = ({
   return (
     <MuiTextField
       fullWidth
+      sx={{ mt: 2 }}
+      label={label}
+      name={name}
+      value={value}
+      onChange={onChange}
+      required={required}
+      error={error}
+      helperText={helperText}
+      disabled={disabled}
       type={isPassword && showPassword ? "text" : type}
-      sx={{ mt: 2, ...sx }}
-      {...props}
       InputProps={{
-        ...(props.InputProps || {}),
         ...(isPassword && {
           endAdornment: (
             <InputAdornment position="end">
-              <IconButton
-                onClick={() => setShowPassword((prev) => !prev)}
-                edge="end"
-              >
+              <IconButton onClick={() => setShowPassword((p) => !p)} edge="end">
                 {showPassword ? <VisibilityOff /> : <Visibility />}
               </IconButton>
             </InputAdornment>

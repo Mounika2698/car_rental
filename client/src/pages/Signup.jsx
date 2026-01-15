@@ -9,11 +9,15 @@ import {
   Link,
   TextField,
   Button,
-  Alert
+  Alert,
+  Tooltip
 } from "../components/index";
 
 const Signup = () => {
   const navigate = useNavigate();
+
+  // ✅ TEMP: Demo "existing emails" list (replace with backend later)
+  const existingEmails = ["admin@car.com", "test@car.com"];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -26,38 +30,107 @@ const Signup = () => {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ Password rules popup state
+  const [pwdAnchor, setPwdAnchor] = useState(null);
+  const openPwdTooltip = (event) => setPwdAnchor(event.currentTarget);
+  const closePwdTooltip = () => setPwdAnchor(null);
+  const pwdTooltipOpen = Boolean(pwdAnchor);
+
+  const passwordRulesList = [
+    "Be at least 8 characters",
+    "Contain at least one uppercase letter (A-Z)",
+    "Contain at least one lowercase letter (a-z)",
+    "Contain at least one number (0-9)",
+    "Contain at least one special character (!@#$...)"
+  ];
+
   const handleChange = (e) => {
     setError("");
     setSuccess("");
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Simple validations
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim());
-  const passwordValid = formData.password.length >= 8;
+  // ---- Email checks ----
+  const emailTrimmed = formData.email.trim().toLowerCase();
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
+  const emailAlreadyRegistered = emailValid && existingEmails.includes(emailTrimmed);
+
+  // ---- Password strength checks ----
+  const password = formData.password;
+
+  const hasMinLength = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+
+  const passwordStrong = hasMinLength && hasUpper && hasLower && hasNumber && hasSpecial;
   const passwordsMatch = formData.password === formData.confirmPassword;
 
-  const formValid =
+  const allFilled =
     formData.name.trim() &&
     formData.email.trim() &&
-    emailValid &&
-    passwordValid &&
-    passwordsMatch;
+    formData.password &&
+    formData.confirmPassword;
+
+  // ✅ button enable/disable
+  const formValid =
+    allFilled && emailValid && !emailAlreadyRegistered && passwordStrong && passwordsMatch;
+
+  // ---- helper texts (real-time field messages) ----
+  const emailHelper =
+    !formData.email
+      ? ""
+      : !emailValid
+      ? "Email must contain @ and domain (example: name@email.com)"
+      : emailAlreadyRegistered
+      ? "Email already registered — please login."
+      : "";
+
+  // ✅ step-by-step password message stays
+  const passwordHelper =
+    !password
+      ? ""
+      : !hasMinLength
+      ? "Minimum 8 characters"
+      : !hasUpper
+      ? "Add at least 1 uppercase letter (A-Z)"
+      : !hasLower
+      ? "Add at least 1 lowercase letter (a-z)"
+      : !hasNumber
+      ? "Add at least 1 number (0-9)"
+      : !hasSpecial
+      ? "Add at least 1 special character (!@#$...)"
+      : "";
+
+  const confirmHelper =
+    !formData.confirmPassword
+      ? ""
+      : !passwordsMatch
+      ? "Passwords do not match."
+      : "";
 
   const handleSignup = async () => {
     setError("");
     setSuccess("");
 
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    // ---- blocking alerts on submit ----
+    if (!allFilled) {
       setError("Please fill all fields.");
       return;
     }
     if (!emailValid) {
-      setError("Please enter a valid email address.");
+      setError("Invalid email format. Please enter a valid email.");
       return;
     }
-    if (!passwordValid) {
-      setError("Password must be at least 8 characters.");
+    if (emailAlreadyRegistered) {
+      setError("This email is already registered. Please login instead.");
+      return;
+    }
+    if (!passwordStrong) {
+      setError(
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+      );
       return;
     }
     if (!passwordsMatch) {
@@ -65,12 +138,8 @@ const Signup = () => {
       return;
     }
 
-    setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 700)); // fake API delay
-
-    setIsLoading(false);
     setSuccess("Signup successful! Please login.");
-    setTimeout(() => navigate("/login"), 800);
+    setTimeout(() => navigate("/login"), 1200);
   };
 
   return (
@@ -98,19 +167,45 @@ const Signup = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            helperText={formData.email && !emailValid ? "Example: name@email.com" : ""}
+            error={!!formData.email && !!emailHelper}
+            helperText={emailHelper}
           />
 
-          {/* Password toggle handled INSIDE TextField */}
+          {/* Password Field */}
           <TextField
-            label="Password (min 8 chars)"
+            label="Password"
             name="password"
             type="password"
             value={formData.password}
             onChange={handleChange}
             required
-            helperText={formData.password && !passwordValid ? "Minimum 8 characters." : ""}
+            error={!!formData.password && !!passwordHelper}
+            helperText={passwordHelper}
           />
+
+          {/* ✅ Password Rules link (opens tooltip) */}
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            <span
+              onClick={openPwdTooltip}
+              style={{ color: "#1976d2", cursor: "pointer", fontWeight: "bold" }}
+            >
+              Password rules
+            </span>
+          </Typography>
+
+          {/* ✅ Tooltip popup with close button */}
+          <Tooltip
+            anchorEl={pwdAnchor}
+            open={pwdTooltipOpen}
+            onClose={closePwdTooltip}
+            title="PASSWORD MUST"
+          >
+            {passwordRulesList.map((rule) => (
+              <Typography key={rule} variant="body2" sx={{ mb: 0.5 }}>
+                • {rule}
+              </Typography>
+            ))}
+          </Tooltip>
 
           <TextField
             label="Confirm Password"
@@ -119,8 +214,8 @@ const Signup = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            error={formData.confirmPassword && !passwordsMatch}
-            helperText={formData.confirmPassword && !passwordsMatch ? "Passwords must match." : ""}
+            error={!!formData.confirmPassword && !passwordsMatch}
+            helperText={confirmHelper}
           />
 
           <Button
