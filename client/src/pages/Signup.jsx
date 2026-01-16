@@ -13,13 +13,32 @@ import {
   Alert,
   Tooltip
 } from "../components/index";
+
+import {
+  PASSWORD_TOOLTIP,
+  SIGNUP_TITLE,
+  PASSWORD_RULES_LINK,
+  ALREADY_HAVE_ACCOUNT_TEXT,
+  SIGNIN_LINK_TEXT,
+  SIGNUP_BUTTON_TEXT,
+  SIGNUP_LOADING_TEXT,
+  SIGNUP_SUCCESS_MSG
+} from "../components/constants/Constant";
+
+import {
+  validateEmail,
+  validatePassword,
+  validateConfirmPassword,
+  validateSignupSubmit
+} from "../components/auth/Validators";
+
 import { signup } from "../redux/slice/authSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
-  // ✅ TEMP: Demo "existing emails" list (replace with backend later)
+  // TEMP: Demo "existing emails" list (replace with backend later)
   const existingEmails = ["admin@car.com", "test@car.com"];
 
   const [formData, setFormData] = useState({
@@ -33,19 +52,11 @@ const Signup = () => {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Password rules popup state
+  // Tooltip state
   const [pwdAnchor, setPwdAnchor] = useState(null);
   const openPwdTooltip = (event) => setPwdAnchor(event.currentTarget);
   const closePwdTooltip = () => setPwdAnchor(null);
   const pwdTooltipOpen = Boolean(pwdAnchor);
-
-  const passwordRulesList = [
-    "Be at least 8 characters",
-    "Contain at least one uppercase letter (A-Z)",
-    "Contain at least one lowercase letter (a-z)",
-    "Contain at least one number (0-9)",
-    "Contain at least one special character (!@#$...)"
-  ];
 
   const handleChange = (e) => {
     setError("");
@@ -53,22 +64,10 @@ const Signup = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // ---- Email checks ----
-  const emailTrimmed = formData.email.trim().toLowerCase();
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
-  const emailAlreadyRegistered = emailValid && existingEmails.includes(emailTrimmed);
-
-  // ---- Password strength checks ----
-  const password = formData.password;
-
-  const hasMinLength = password.length >= 8;
-  const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecial = /[^A-Za-z0-9]/.test(password);
-
-  const passwordStrong = hasMinLength && hasUpper && hasLower && hasNumber && hasSpecial;
-  const passwordsMatch = formData.password === formData.confirmPassword;
+  // ---- Field validations (reusable functions) ----
+  const emailRes = validateEmail(formData.email, existingEmails);
+  const passwordRes = validatePassword(formData.password);
+  const confirmRes = validateConfirmPassword(formData.password, formData.confirmPassword);
 
   const allFilled =
     formData.name.trim() &&
@@ -76,75 +75,33 @@ const Signup = () => {
     formData.password &&
     formData.confirmPassword;
 
-  // ✅ button enable/disable
   const formValid =
-    allFilled && emailValid && !emailAlreadyRegistered && passwordStrong && passwordsMatch;
-
-  // ---- helper texts (real-time field messages) ----
-  const emailHelper =
-    !formData.email
-      ? ""
-      : !emailValid
-      ? "Email must contain @ and domain (example: name@email.com)"
-      : emailAlreadyRegistered
-      ? "Email already registered — please login."
-      : "";
-
-  // ✅ step-by-step password message stays
-  const passwordHelper =
-    !password
-      ? ""
-      : !hasMinLength
-      ? "Minimum 8 characters"
-      : !hasUpper
-      ? "Add at least 1 uppercase letter (A-Z)"
-      : !hasLower
-      ? "Add at least 1 lowercase letter (a-z)"
-      : !hasNumber
-      ? "Add at least 1 number (0-9)"
-      : !hasSpecial
-      ? "Add at least 1 special character (!@#$...)"
-      : "";
-
-  const confirmHelper =
-    !formData.confirmPassword
-      ? ""
-      : !passwordsMatch
-      ? "Passwords do not match."
-      : "";
+    allFilled &&
+    emailRes.valid &&
+    !emailRes.alreadyRegistered &&
+    passwordRes.strong &&
+    confirmRes.match;
 
   const handleSignup = async () => {
     setError("");
     setSuccess("");
 
-    // ---- blocking alerts on submit ----
-    if (!allFilled) {
-      setError("Please fill all fields.");
-      return;
-    }
-    if (!emailValid) {
-      setError("Invalid email format. Please enter a valid email.");
-      return;
-    }
-    if (emailAlreadyRegistered) {
-      setError("This email is already registered. Please login instead.");
-      return;
-    }
-    if (!passwordStrong) {
-      setError(
-        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
-      );
-      return;
-    }
-    if (!passwordsMatch) {
-      setError("Passwords do not match.");
+    const submitCheck = validateSignupSubmit(formData, existingEmails);
+    if (!submitCheck.ok) {
+      setError(submitCheck.message);
       return;
     }
 
-    setSuccess("Signup successful! Please login.");
+    // OPTIONAL loading usage
+    setIsLoading(true);
+
+    // Dispatch first (so redux updates)
+    dispatch(signup(formData));
+
+    setIsLoading(false);
+
+    setSuccess(SIGNUP_SUCCESS_MSG);
     setTimeout(() => navigate("/login"), 1200);
-    dispatch(signup(formData))
-   
   };
 
   return (
@@ -152,7 +109,7 @@ const Signup = () => {
       <Box sx={{ mt: 8 }}>
         <Paper>
           <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
-            Car Rental Signup
+            {SIGNUP_TITLE}
           </Typography>
 
           <Alert severity="error" text={error} />
@@ -172,11 +129,10 @@ const Signup = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            error={!!formData.email && !!emailHelper}
-            helperText={emailHelper}
+            error={emailRes.error}
+            helperText={emailRes.helperText}
           />
 
-          {/* Password Field */}
           <TextField
             label="Password"
             name="password"
@@ -184,28 +140,26 @@ const Signup = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            error={!!formData.password && !!passwordHelper}
-            helperText={passwordHelper}
+            error={passwordRes.error}
+            helperText={passwordRes.helperText}
           />
 
-          {/* ✅ Password Rules link (opens tooltip) */}
           <Typography variant="body2" sx={{ mt: 1 }}>
             <span
               onClick={openPwdTooltip}
               style={{ color: "#1976d2", cursor: "pointer", fontWeight: "bold" }}
             >
-              Password rules
+              {PASSWORD_RULES_LINK}
             </span>
           </Typography>
 
-          {/* ✅ Tooltip popup with close button */}
           <Tooltip
             anchorEl={pwdAnchor}
             open={pwdTooltipOpen}
             onClose={closePwdTooltip}
             title="PASSWORD MUST"
           >
-            {passwordRulesList.map((rule) => (
+            {PASSWORD_TOOLTIP.map((rule) => (
               <Typography key={rule} variant="body2" sx={{ mb: 0.5 }}>
                 • {rule}
               </Typography>
@@ -219,18 +173,18 @@ const Signup = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            error={!!formData.confirmPassword && !passwordsMatch}
-            helperText={confirmHelper}
+            error={confirmRes.error}
+            helperText={confirmRes.helperText}
           />
 
           <Button
-            text={isLoading ? "Creating account..." : "SignUp"}
+            text={isLoading ? SIGNUP_LOADING_TEXT : SIGNUP_BUTTON_TEXT}
             onClick={handleSignup}
             disabled={!formValid || isLoading}
           />
 
           <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-            Already have an account? <Link to="/login">Sign in</Link>
+            {ALREADY_HAVE_ACCOUNT_TEXT} <Link to="/login">{SIGNIN_LINK_TEXT}</Link>
           </Typography>
         </Paper>
       </Box>
