@@ -1,0 +1,40 @@
+// src/components/constants/Constant.js
+
+// Regex
+export const EMAIL_VALID = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Tooltip rules
+export const PASSWORD_TOOLTIP = [
+  "Be at least 8 characters",
+  "Contain at least one uppercase letter (A-Z)",
+  "Contain at least one lowercase letter (a-z)",
+  "Contain at least one number (0-9)",
+  "Contain at least one special character (!@#$...)"
+];
+
+// Field helper / error messages
+export const EMAIL_VALID_MSG = "Email must contain @ and domain (example: name@email.com)";
+export const EMAIL_EXISTS_MSG = "This email is already registered. Please login instead.";
+
+export const FILL_ALL_FIELDS_MSG = "Please fill all fields.";
+export const INVALID_EMAIL_MSG = "Invalid email format. Please enter a valid email.";
+export const PASSWORD_WEAK_MSG =
+  "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+export const PASSWORDS_MISMATCH_MSG = "Passwords do not match.";
+
+export const SIGNUP_SUCCESS_MSG = "Signup successful! Please login.";
+
+// Password step-by-step messages
+export const PASS_MIN_MSG = "Minimum 8 characters";
+export const PASS_UPPER_MSG = "Add at least 1 uppercase letter (A-Z)";
+export const PASS_LOWER_MSG = "Add at least 1 lowercase letter (a-z)";
+export const PASS_NUMBER_MSG = "Add at least 1 number (0-9)";
+export const PASS_SPECIAL_MSG = "Add at least 1 special character (!@#$...)";
+
+// UI labels
+export const SIGNUP_TITLE = "Car Rental Signup";
+export const PASSWORD_RULES_LINK = "Password rules";
+export const SIGNIN_LINK_TEXT = "Sign in";
+export const ALREADY_HAVE_ACCOUNT_TEXT = "Already have an account?";
+export const SIGNUP_BUTTON_TEXT = "SignUp";
+export const SIGNUP_LOADING_TEXT = "Creating account...";
