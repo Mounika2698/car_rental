@@ -38,3 +38,15 @@ export const SIGNIN_LINK_TEXT = "Sign in";
 export const ALREADY_HAVE_ACCOUNT_TEXT = "Already have an account?";
 export const SIGNUP_BUTTON_TEXT = "SignUp";
 export const SIGNUP_LOADING_TEXT = "Creating account...";
+
+// ---- Login UI text ----
+export const LOGIN_TITLE = "Car Rental Login";
+export const LOGIN_BUTTON_TEXT = "SignIn";
+export const LOGIN_LOADING_TEXT = "Signing in...";
+export const NEW_USER_TEXT = "New User?";
+export const SIGNUP_LINK_TEXT = "SignUp";
+export const SIGNUP_HERE_TEXT = "here";
+
+// ---- Login errors ----
+export const LOGIN_INVALID_MSG = "Incorrect credentials. Please try again!";
+export const LOGIN_FILL_FIELDS_MSG = "Please enter email and password.";

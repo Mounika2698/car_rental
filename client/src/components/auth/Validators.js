@@ -15,6 +15,11 @@ import {
   PASSWORDS_MISMATCH_MSG
 } from "../constants/Constant";
 
+import {
+  LOGIN_FILL_FIELDS_MSG,
+  LOGIN_INVALID_MSG
+} from "../constants/Constant";
+
 /**
  * Email validation (format + duplicate)
  */
@@ -110,6 +115,27 @@ if (!hasName || !hasEmail || !hasPassword || !hasConfirmPassword) {
 
   const confirmRes = validateConfirmPassword(formData.password, formData.confirmPassword);
   if (!confirmRes.match) return { ok: false, message: PASSWORDS_MISMATCH_MSG };
+
+  return { ok: true, message: "" };
+}
+
+export function validateLoginSubmit(email, password) {
+  const hasEmail = (email || "").trim().length > 0;
+  const hasPassword = Boolean(password);
+
+  if (!hasEmail || !hasPassword) {
+    return { ok: false, message: LOGIN_FILL_FIELDS_MSG };
+  }
+
+  // TEMP dummy logic (replace with backend)
+  const dummyUser = "admin@car.com";
+  const dummyPass = "password123";
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (normalizedEmail !== dummyUser || password !== dummyPass) {
+    return { ok: false, message: LOGIN_INVALID_MSG };
+  }
 
   return { ok: true, message: "" };
 }

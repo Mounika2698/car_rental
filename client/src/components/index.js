@@ -7,4 +7,5 @@ export { default as TextField } from "./common/TextField";
 export { default as Button } from "./common/Button";
 export { default as Alert } from "./common/Alert";
 export { default as Tooltip } from "./common/Tooltip";
+export { default as PasswordRulesTooltip } from "./auth/PasswordRulesTooltip";
 
