@@ -34,7 +34,7 @@ const Signup = () => {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e) => {
+  const handleSignupChange = (e) => {
     setError("");
     setSuccess("");
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -94,7 +94,7 @@ const Signup = () => {
             label="Full Name"
             name="name"
             value={formData.name}
-            onChange={handleChange}
+            onChange={handleSignupChange}
             required
           />
 
@@ -102,7 +102,7 @@ const Signup = () => {
             label="Email Address"
             name="email"
             value={formData.email}
-            onChange={handleChange}
+            onChange={handleSignupChange}
             required
             error={emailRes.error}
             helperText={emailRes.helperText}
@@ -113,7 +113,7 @@ const Signup = () => {
             name="password"
             type="password"
             value={formData.password}
-            onChange={handleChange}
+            onChange={handleSignupChange}
             required
             error={passwordRes.error}
             helperText={passwordRes.helperText}
@@ -126,7 +126,7 @@ const Signup = () => {
             name="confirmPassword"
             type="password"
             value={formData.confirmPassword}
-            onChange={handleChange}
+            onChange={handleSignupChange}
             required
             error={confirmRes.error}
             helperText={confirmRes.helperText}

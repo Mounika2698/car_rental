@@ -15,8 +15,17 @@ import { validateEmail, validatePassword, validateLoginSubmit } from "../compone
 const Login = () => {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+ const [formData, setFormData] = useState({
+  email: "",
+  password: ""
+});
+const handleLoginChange = (e) => {
+  setError("");
+  setFormData((prev) => ({
+    ...prev,
+    [e.target.name]: e.target.value
+  }));
+};
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -67,8 +76,8 @@ const Login = () => {
             <TextField
               label="Email Address"
               name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+                onChange={handleLoginChange}
               required
               error={emailRes.error}
               helperText={emailRes.helperText}
@@ -80,7 +89,7 @@ const Login = () => {
               name="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleLoginChange}
               required
               error={passwordRes.error}
               helperText={passwordRes.helperText}
