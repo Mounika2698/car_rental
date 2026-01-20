@@ -10,13 +10,36 @@ import {
   Link,
   TextField,
   Button,
-  Alert
+  Alert,
+  Tooltip
 } from "../components/index";
+
+import {
+  PASSWORD_TOOLTIP,
+  SIGNUP_TITLE,
+  PASSWORD_RULES_LINK,
+  ALREADY_HAVE_ACCOUNT_TEXT,
+  SIGNIN_LINK_TEXT,
+  SIGNUP_BUTTON_TEXT,
+  SIGNUP_LOADING_TEXT,
+  SIGNUP_SUCCESS_MSG
+} from "../components/constants/Constant";
+
+import {
+  validateEmail,
+  validatePassword,
+  validateConfirmPassword,
+  validateSignupSubmit
+} from "../components/auth/Validators";
+
 import { signup } from "../redux/slice/authSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
+
+  // TEMP: Demo "existing emails" list (replace with backend later)
+  const existingEmails = ["admin@car.com", "test@car.com"];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,52 +52,56 @@ const Signup = () => {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Tooltip state
+  const [pwdAnchor, setPwdAnchor] = useState(null);
+  const openPwdTooltip = (event) => setPwdAnchor(event.currentTarget);
+  const closePwdTooltip = () => setPwdAnchor(null);
+  const pwdTooltipOpen = Boolean(pwdAnchor);
+
   const handleChange = (e) => {
     setError("");
     setSuccess("");
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Simple validations
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim());
-  const passwordValid = formData.password.length >= 8;
-  const passwordsMatch = formData.password === formData.confirmPassword;
+  // ---- Field validations (reusable functions) ----
+  const emailRes = validateEmail(formData.email, existingEmails);
+  const passwordRes = validatePassword(formData.password);
+  const confirmRes = validateConfirmPassword(formData.password, formData.confirmPassword);
 
-  const formValid =
+  const allFilled =
     formData.name.trim() &&
     formData.email.trim() &&
-    emailValid &&
-    passwordValid &&
-    passwordsMatch;
+    formData.password &&
+    formData.confirmPassword;
+
+  const formValid =
+    allFilled &&
+    emailRes.valid &&
+    !emailRes.alreadyRegistered &&
+    passwordRes.strong &&
+    confirmRes.match;
 
   const handleSignup = async () => {
     setError("");
     setSuccess("");
 
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError("Please fill all fields.");
-      return;
-    }
-    if (!emailValid) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-    if (!passwordValid) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (!passwordsMatch) {
-      setError("Passwords do not match.");
+    const submitCheck = validateSignupSubmit(formData, existingEmails);
+    if (!submitCheck.ok) {
+      setError(submitCheck.message);
       return;
     }
 
+    // OPTIONAL loading usage
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 700)); // fake API delay
+
+    // Dispatch first (so redux updates)
+    dispatch(signup(formData));
 
     setIsLoading(false);
-    setSuccess("Signup successful! Please login.");
-    dispatch(signup(formData))
-    setTimeout(() => navigate("/login"), 800);
+
+    setSuccess(SIGNUP_SUCCESS_MSG);
+    setTimeout(() => navigate("/login"), 1200);
   };
 
   return (
@@ -82,7 +109,7 @@ const Signup = () => {
       <Box sx={{ mt: 8 }}>
         <Paper>
           <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
-            Car Rental Signup
+            {SIGNUP_TITLE}
           </Typography>
 
           <Alert severity="error" text={error} />
@@ -102,19 +129,42 @@ const Signup = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            helperText={formData.email && !emailValid ? "Example: name@email.com" : ""}
+            error={emailRes.error}
+            helperText={emailRes.helperText}
           />
 
-          {/* Password toggle handled INSIDE TextField */}
           <TextField
-            label="Password (min 8 chars)"
+            label="Password"
             name="password"
             type="password"
             value={formData.password}
             onChange={handleChange}
             required
-            helperText={formData.password && !passwordValid ? "Minimum 8 characters." : ""}
+            error={passwordRes.error}
+            helperText={passwordRes.helperText}
           />
+
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            <span
+              onClick={openPwdTooltip}
+              style={{ color: "#1976d2", cursor: "pointer", fontWeight: "bold" }}
+            >
+              {PASSWORD_RULES_LINK}
+            </span>
+          </Typography>
+
+          <Tooltip
+            anchorEl={pwdAnchor}
+            open={pwdTooltipOpen}
+            onClose={closePwdTooltip}
+            title="PASSWORD MUST"
+          >
+            {PASSWORD_TOOLTIP.map((rule) => (
+              <Typography key={rule} variant="body2" sx={{ mb: 0.5 }}>
+                • {rule}
+              </Typography>
+            ))}
+          </Tooltip>
 
           <TextField
             label="Confirm Password"
@@ -123,18 +173,18 @@ const Signup = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            error={formData.confirmPassword && !passwordsMatch}
-            helperText={formData.confirmPassword && !passwordsMatch ? "Passwords must match." : ""}
+            error={confirmRes.error}
+            helperText={confirmRes.helperText}
           />
 
           <Button
-            text={isLoading ? "Creating account..." : "SignUp"}
+            text={isLoading ? SIGNUP_LOADING_TEXT : SIGNUP_BUTTON_TEXT}
             onClick={handleSignup}
             disabled={!formValid || isLoading}
           />
 
           <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-            Already have an account? <Link to="/login">Sign in</Link>
+            {ALREADY_HAVE_ACCOUNT_TEXT} <Link to="/login">{SIGNIN_LINK_TEXT}</Link>
           </Typography>
         </Paper>
       </Box>
