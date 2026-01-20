@@ -3,33 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
 import {
-  Container,
-  Box,
-  Paper,
-  Typography,
-  Link,
-  TextField,
-  Button,
-  Alert,
-  Tooltip
+  Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
 } from "../components/index";
 
 import {
-  PASSWORD_TOOLTIP,
-  SIGNUP_TITLE,
-  PASSWORD_RULES_LINK,
-  ALREADY_HAVE_ACCOUNT_TEXT,
-  SIGNIN_LINK_TEXT,
-  SIGNUP_BUTTON_TEXT,
-  SIGNUP_LOADING_TEXT,
-  SIGNUP_SUCCESS_MSG
+  SIGNUP_TITLE, ALREADY_HAVE_ACCOUNT_TEXT, SIGNIN_LINK_TEXT, SIGNUP_BUTTON_TEXT, SIGNUP_LOADING_TEXT, SIGNUP_SUCCESS_MSG
 } from "../components/constants/Constant";
 
 import {
-  validateEmail,
-  validatePassword,
-  validateConfirmPassword,
-  validateSignupSubmit
+  validateEmail, validatePassword, validateConfirmPassword, validateSignupSubmit
 } from "../components/auth/Validators";
 
 import { signup } from "../redux/slice/authSlice";
@@ -51,12 +33,6 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // Tooltip state
-  const [pwdAnchor, setPwdAnchor] = useState(null);
-  const openPwdTooltip = (event) => setPwdAnchor(event.currentTarget);
-  const closePwdTooltip = () => setPwdAnchor(null);
-  const pwdTooltipOpen = Boolean(pwdAnchor);
 
   const handleChange = (e) => {
     setError("");
@@ -92,7 +68,6 @@ const Signup = () => {
       return;
     }
 
-    // OPTIONAL loading usage
     setIsLoading(true);
 
     // Dispatch first (so redux updates)
@@ -144,27 +119,7 @@ const Signup = () => {
             helperText={passwordRes.helperText}
           />
 
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            <span
-              onClick={openPwdTooltip}
-              style={{ color: "#1976d2", cursor: "pointer", fontWeight: "bold" }}
-            >
-              {PASSWORD_RULES_LINK}
-            </span>
-          </Typography>
-
-          <Tooltip
-            anchorEl={pwdAnchor}
-            open={pwdTooltipOpen}
-            onClose={closePwdTooltip}
-            title="PASSWORD MUST"
-          >
-            {PASSWORD_TOOLTIP.map((rule) => (
-              <Typography key={rule} variant="body2" sx={{ mb: 0.5 }}>
-                • {rule}
-              </Typography>
-            ))}
-          </Tooltip>
+          <PasswordRulesTooltip />
 
           <TextField
             label="Confirm Password"

@@ -1,55 +1,63 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  Box, Typography, Container, Paper, Alert
-} from '@mui/material';
-import TextField from '../components/common/TextField'
-import Button from "../components/common/Button";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const Login = () => {
+import {
+  Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
+} from "../components";
+
+import {
+  LOGIN_TITLE, LOGIN_BUTTON_TEXT, LOGIN_LOADING_TEXT, NEW_USER_TEXT, SIGNUP_LINK_TEXT, SIGNUP_HERE_TEXT,
+  LOGIN_INVALID_MSG
+} from "../components/constants/Constant";
+
+import { validateEmail, validatePassword, validateLoginSubmit } from "../components/auth/Validators";
+
+  const Login = () => {
   const navigate = useNavigate();
 
-  // State for form fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // State for error messages
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const emailRes = validateEmail(email);       
+  const passwordRes = validatePassword(password);
+
+  const formValid =
+    email.trim() &&
+    password &&
+    emailRes.valid &&
+    passwordRes.strong;
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    // DUMMY VALIDATION LOGIC
-    const dummyUser = "admin@car.com";
-    const dummyPass = "password123";
-
-    if (email === dummyUser && password === dummyPass) {
-      setError(false);
-      alert("Success! You are logged in."); // Optional visual feedback
-      navigate('/'); // Move to the car rental home
-    } else {
-      setError(true); // Show the "Incorrect Creds" message
+    const result = validateLoginSubmit(email, password);
+    if (!result.ok) {
+      setError(result.message || LOGIN_INVALID_MSG);
+      return;
     }
+
+    setIsLoading(true);
+
+    // TEMP success (backend later)
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate("/");
+    }, 1200);
   };
-
-
-  const buttonOnclick = (e) => {
-    navigate('/'); // Move to the car rental dashboard
-  }
 
   return (
     <Container component="main" maxWidth="xs">
       <Box sx={{ mt: 8 }}>
         <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
-          <Typography variant="h5" align="center" sx={{ fontWeight: 'bold', mb: 3 }}>
-            Car Rental Login
+          <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
+            {LOGIN_TITLE}
           </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              Incorrect credentials. Please try again!
-            </Alert>
-          )}
+          <Alert severity="error" text={error} />
 
           <form onSubmit={handleSubmit}>
             <TextField
@@ -58,32 +66,30 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              error={emailRes.error}
+              helperText={emailRes.helperText}
             />
             <TextField
               label="Password"
+              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              error={passwordRes.error}
+              helperText={passwordRes.helperText}
             />
+            <PasswordRulesTooltip />
+
             <Button
-              text="SignIn"
-              variant="contained"
-              onClick={buttonOnclick}
-            >
-            </Button>
+              text={isLoading ? LOGIN_LOADING_TEXT : LOGIN_BUTTON_TEXT}
+              type="submit"
+              disabled={!formValid || isLoading}
+            />
           </form>
 
-          <Typography variant="body2" color="text.secondary" align="center">
-            New User?{' '}
-            <Link
-              component={Link}
-              to="/signup"
-              sx={{ textDecoration: 'none', fontWeight: 'bold' }}
-            >
-              SignUp
-            </Link>{' '}
-            here
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+            {NEW_USER_TEXT} <Link to="/signup">{SIGNUP_LINK_TEXT}</Link> {SIGNUP_HERE_TEXT}
           </Typography>
         </Paper>
       </Box>
