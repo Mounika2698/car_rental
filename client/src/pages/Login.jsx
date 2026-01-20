@@ -7,7 +7,7 @@ import {
 
 import {
   LOGIN_TITLE, LOGIN_BUTTON_TEXT,  LOGIN_LOADING_TEXT, NEW_USER_TEXT, SIGNUP_LINK_TEXT, SIGNUP_HERE_TEXT,
-  LOGIN_INVALID_MSG
+  LOGIN_INVALID_MSG, FORGOT_PASSWORD_LINK_TEXT
 } from "../components/constants/Constant";
 
 import { validateEmail, validatePassword, validateLoginSubmit } from "../components/auth/Validators";
@@ -31,13 +31,13 @@ const handleLoginChange = (e) => {
   const [isLoading, setIsLoading] = useState(false);
 
   // ✅ Real-time validation results (like Signup)
-  const emailRes = validateEmail(email);         // no existingEmails needed in login
-  const passwordRes = validatePassword(password);
+  const emailRes = validateEmail(formData.email);         // no existingEmails needed in login
+  const passwordRes = validatePassword(formData.password);
 
   // ✅ Form valid logic (controls button)
   const formValid =
-    email.trim() &&
-    password &&
+    formData.email.trim() &&
+    formData.password &&
     emailRes.valid &&
     passwordRes.strong;
 
@@ -46,7 +46,7 @@ const handleLoginChange = (e) => {
     setError("");
 
     // ✅ submit-level checks (dummy creds for now)
-    const result = validateLoginSubmit(email, password);
+    const result = validateLoginSubmit(formData.email, formData.password);
     if (!result.ok) {
       setError(result.message || LOGIN_INVALID_MSG);
       return;
@@ -88,7 +88,7 @@ const handleLoginChange = (e) => {
               label="Password"
               name="password"
               type="password"
-              value={password}
+              value={formData.password}
               onChange={handleLoginChange}
               required
               error={passwordRes.error}
@@ -97,6 +97,12 @@ const handleLoginChange = (e) => {
 
             {/* Optional password rules help */}
             <PasswordRulesTooltip />
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+              <Link to="/forgot-password" sx={{ fontSize: '0.875rem' }}>
+                {FORGOT_PASSWORD_LINK_TEXT}
+              </Link>
+            </Box>
 
             <Button
               text={isLoading ? LOGIN_LOADING_TEXT : LOGIN_BUTTON_TEXT}
