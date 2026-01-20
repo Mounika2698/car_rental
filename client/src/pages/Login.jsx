@@ -64,7 +64,7 @@ import { validateEmail, validatePassword, validateLoginSubmit } from "../compone
               label="Email Address"
               name="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleChange}
               required
               error={emailRes.error}
               helperText={emailRes.helperText}
@@ -74,7 +74,7 @@ import { validateEmail, validatePassword, validateLoginSubmit } from "../compone
               name="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleChange}
               required
               error={passwordRes.error}
               helperText={passwordRes.helperText}
