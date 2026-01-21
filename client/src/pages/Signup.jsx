@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 
 import {
   Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
@@ -14,11 +13,12 @@ import {
   validateEmail, validatePassword, validateConfirmPassword, validateSignupSubmit
 } from "../components/auth/Validators";
 
-import { signup } from "../redux/slice/authSlice";
-
+import { useDispatch, useSelector } from "react-redux";
+import { signupUser } from '../redux/slice/authSlice'
 const Signup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { loading } = useSelector(state => state.auth);
 
   // TEMP: Demo "existing emails" list (replace with backend later)
   const existingEmails = ["admin@car.com", "test@car.com"];
@@ -61,7 +61,7 @@ const Signup = () => {
   const handleSignup = async () => {
     setError("");
     setSuccess("");
-
+    dispatch(signupUser(formData));
     const submitCheck = validateSignupSubmit(formData, existingEmails);
     if (!submitCheck.ok) {
       setError(submitCheck.message);
@@ -71,7 +71,6 @@ const Signup = () => {
     setIsLoading(true);
 
     // Dispatch first (so redux updates)
-    dispatch(signup(formData));
 
     setIsLoading(false);
 

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from '../redux/slice/authSlice'
 
 import {
   Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
 } from "../components";
 
 import {
-  LOGIN_TITLE, LOGIN_BUTTON_TEXT,  LOGIN_LOADING_TEXT, NEW_USER_TEXT, SIGNUP_LINK_TEXT, SIGNUP_HERE_TEXT,
+  LOGIN_TITLE, LOGIN_BUTTON_TEXT, LOGIN_LOADING_TEXT, NEW_USER_TEXT, SIGNUP_LINK_TEXT, SIGNUP_HERE_TEXT,
   LOGIN_INVALID_MSG
 } from "../components/constants/Constant";
 
@@ -14,39 +16,43 @@ import { validateEmail, validatePassword, validateLoginSubmit } from "../compone
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading } = useSelector(state => state.auth);
 
- const [formData, setFormData] = useState({
-  email: "",
-  password: ""
-});
-const handleLoginChange = (e) => {
-  setError("");
-  setFormData((prev) => ({
-    ...prev,
-    [e.target.name]: e.target.value
-  }));
-};
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+  const handleLoginChange = (e) => {
+    setError("");
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // ✅ Real-time validation results (like Signup)
-  const emailRes = validateEmail(email);         // no existingEmails needed in login
-  const passwordRes = validatePassword(password);
+  const emailRes = validateEmail(formData.email);         // no existingEmails needed in login
+  const passwordRes = validatePassword(formData.password);
 
   // ✅ Form valid logic (controls button)
   const formValid =
-    email.trim() &&
-    password &&
+    formData.email.trim() &&
+    formData.password &&
     emailRes.valid &&
     passwordRes.strong;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    dispatch(loginUser(formData));
+
     setError("");
 
     // ✅ submit-level checks (dummy creds for now)
-    const result = validateLoginSubmit(email, password);
+    const result = validateLoginSubmit(formData.email, formData.password);
     if (!result.ok) {
       setError(result.message || LOGIN_INVALID_MSG);
       return;
@@ -77,7 +83,7 @@ const handleLoginChange = (e) => {
               label="Email Address"
               name="email"
               value={formData.email}
-                onChange={handleLoginChange}
+              onChange={handleLoginChange}
               required
               error={emailRes.error}
               helperText={emailRes.helperText}
@@ -88,7 +94,7 @@ const handleLoginChange = (e) => {
               label="Password"
               name="password"
               type="password"
-              value={password}
+              value={formData.password}
               onChange={handleLoginChange}
               required
               error={passwordRes.error}
