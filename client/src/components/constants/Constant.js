@@ -46,7 +46,15 @@ export const LOGIN_LOADING_TEXT = "Signing in...";
 export const NEW_USER_TEXT = "New User?";
 export const SIGNUP_LINK_TEXT = "SignUp";
 export const SIGNUP_HERE_TEXT = "here";
+export const FORGOT_PASSWORD_LINK_TEXT = "Forgot Password?";
 
 // ---- Login errors ----
 export const LOGIN_INVALID_MSG = "Incorrect credentials. Please try again!";
 export const LOGIN_FILL_FIELDS_MSG = "Please enter email and password.";
+
+// ---- Forgot Password UI text ----
+export const FORGOT_PASSWORD_TITLE = "Forgot Password";
+export const FORGOT_PASSWORD_DESCRIPTION = "Enter your registered email address to reset your password.";
+export const FORGOT_PASSWORD_BUTTON_TEXT = "Continue";
+export const FORGOT_PASSWORD_REMEMBER_TEXT = "Remember your password?";
+export const FORGOT_PASSWORD_SIGNIN_LINK = "Sign In";

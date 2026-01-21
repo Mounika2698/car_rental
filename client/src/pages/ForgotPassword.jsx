@@ -10,7 +10,16 @@ import {
   Button,
   Alert
 } from "../components/index";
-import { EMAIL_VALID, EMAIL_VALID_MSG } from "../components/constants/Constant";
+import { 
+  EMAIL_VALID, 
+  PASSWORD_TOOLTIP,
+  FORGOT_PASSWORD_TITLE,
+  FORGOT_PASSWORD_DESCRIPTION,
+  FORGOT_PASSWORD_BUTTON_TEXT,
+  FORGOT_PASSWORD_REMEMBER_TEXT,
+  FORGOT_PASSWORD_SIGNIN_LINK
+} from "../components/constants/Constant";
+import { validateEmail } from "../components/auth/Validators";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -19,44 +28,29 @@ const ForgotPassword = () => {
   const [emailError, setEmailError] = useState(false);
   const [emailHelperText, setEmailHelperText] = useState('');
 
-  // Validate email format
-  const validateEmail = (emailValue) => {
-    const trimmed = (emailValue || "").trim();
-    if (!trimmed) {
-      setEmailError(false);
-      setEmailHelperText('');
-      return false;
-    }
-    const isValid = EMAIL_VALID.test(trimmed);
-    if (!isValid) {
-      setEmailError(true);
-      setEmailHelperText(EMAIL_VALID_MSG);
-      return false;
-    } else {
-      setEmailError(false);
-      setEmailHelperText('');
-      return true;
-    }
-  };
-
   // Check if form is valid
   const isFormValid = () => {
     return email.trim() !== '' && EMAIL_VALID.test(email.trim());
   };
 
-  // Handle email change
-  const handleEmailChange = (e) => {
+  // Handle forgot password change
+  const handleForgotPasswordChange = (e) => {
     const value = e.target.value;
     setEmail(value);
-    validateEmail(value);
+    const emailValidation = validateEmail(value);
+    setEmailError(emailValidation.error);
+    setEmailHelperText(emailValidation.helperText);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate email before submission
-    const emailValid = validateEmail(email);
-    if (!emailValid) {
+    // Validate email before submission using validators
+    const emailValidation = validateEmail(email);
+    setEmailError(emailValidation.error);
+    setEmailHelperText(emailValidation.helperText);
+    
+    if (!emailValidation.valid) {
       return;
     }
 
@@ -72,11 +66,11 @@ const ForgotPassword = () => {
       <Box sx={{ mt: 8 }}>
         <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
           <Typography variant="h5" align="center" sx={{ fontWeight: 'bold', mb: 3 }}>
-            Forgot Password
+            {FORGOT_PASSWORD_TITLE}
           </Typography>
 
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-            Enter your registered email address to reset your password.
+            {FORGOT_PASSWORD_DESCRIPTION}
           </Typography>
 
           <form onSubmit={handleSubmit}>
@@ -84,13 +78,13 @@ const ForgotPassword = () => {
               label="Email Address"
               name="email"
               value={email}
-              onChange={handleEmailChange}
+              onChange={handleForgotPasswordChange}
               required
               error={emailError}
               helperText={emailHelperText}
             />
             <Button
-              text="Continue"
+              text={FORGOT_PASSWORD_BUTTON_TEXT}
               variant="contained"
               type="submit"
               disabled={!isFormValid()}
@@ -98,9 +92,9 @@ const ForgotPassword = () => {
           </form>
 
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            Remember your password?{' '}
+            {FORGOT_PASSWORD_REMEMBER_TEXT}{' '}
             <Link to="/login">
-              Sign In
+              {FORGOT_PASSWORD_SIGNIN_LINK}
             </Link>
           </Typography>
         </Paper>
