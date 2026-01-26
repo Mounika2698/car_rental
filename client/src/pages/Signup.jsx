@@ -6,7 +6,8 @@ import {
 } from "../components/index";
 
 import {
-  SIGNUP_TITLE, ALREADY_HAVE_ACCOUNT_TEXT, SIGNIN_LINK_TEXT, SIGNUP_BUTTON_TEXT, SIGNUP_LOADING_TEXT, SIGNUP_SUCCESS_MSG
+  SIGNUP_TITLE, ALREADY_HAVE_ACCOUNT_TEXT, SIGNIN_LINK_TEXT, SIGNUP_BUTTON_TEXT, SIGNUP_LOADING_TEXT, SIGNUP_SUCCESS_MSG, 
+  EMAIL_EXISTS_MSG, CATCH_ERR_MSG, SIGNUP_FAILED
 } from "../components/constants/Constant";
 
 import {
@@ -15,13 +16,11 @@ import {
 
 import { useDispatch, useSelector } from "react-redux";
 import { signupUser } from '../redux/slice/authSlice'
+
 const Signup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading } = useSelector(state => state.auth);
-
-  // TEMP: Demo "existing emails" list (replace with backend later)
-  const existingEmails = ["admin@car.com", "test@car.com"];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -41,28 +40,19 @@ const Signup = () => {
   };
 
   // ---- Field validations (reusable functions) ----
-  const emailRes = validateEmail(formData.email, existingEmails);
+  const emailRes = validateEmail(formData.email);
   const passwordRes = validatePassword(formData.password);
   const confirmRes = validateConfirmPassword(formData.password, formData.confirmPassword);
 
-  const allFilled =
-    formData.name.trim() &&
-    formData.email.trim() &&
-    formData.password &&
-    formData.confirmPassword;
+  const allFilled = formData.name.trim() && formData.email.trim() && formData.password && formData.confirmPassword;
 
-  const formValid =
-    allFilled &&
-    emailRes.valid &&
-    !emailRes.alreadyRegistered &&
-    passwordRes.strong &&
-    confirmRes.match;
+  const formValid = allFilled && emailRes.valid && passwordRes.strong && confirmRes.match;
 
-  const handleSignup = async () => {
+   const handleSignup = async () => {
     setError("");
     setSuccess("");
-    dispatch(signupUser(formData));
-    const submitCheck = validateSignupSubmit(formData, existingEmails);
+
+    const submitCheck = validateSignupSubmit(formData);
     if (!submitCheck.ok) {
       setError(submitCheck.message);
       return;
@@ -70,12 +60,32 @@ const Signup = () => {
 
     setIsLoading(true);
 
-    // Dispatch first (so redux updates)
+    try {
+      const action = await dispatch(signupUser(formData));
 
-    setIsLoading(false);
+      if (signupUser.rejected.match(action)) {
+        const code = action.payload?.code;
+        const backendMsg =
+          action.payload?.message || action.error?.message || SIGNUP_FAILED;
 
-    setSuccess(SIGNUP_SUCCESS_MSG);
-    setTimeout(() => navigate("/login"), 1200);
+       if (code === "EMAIL_EXISTS") {
+        setError(
+          backendMsg + EMAIL_EXISTS_MSG
+        );
+        setTimeout(() => navigate("/login"), 3000);
+        return;
+      }
+
+      setError(backendMsg);
+      return;
+      }
+
+      setSuccess(SIGNUP_SUCCESS_MSG);
+      setTimeout(() => navigate("/login"), 3000);
+    } catch (err) {
+      setIsLoading(false);
+      setError(CATCH_ERR_MSG);
+    }
   };
 
   return (
