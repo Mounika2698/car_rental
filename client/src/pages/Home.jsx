@@ -1,103 +1,160 @@
-import React from "react";
-import { Box, Container, Typography, Button, Card, CardContent, TextField, Grid } from "@mui/material";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
-import SecurityIcon from "@mui/icons-material/Security";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+import {
+    AppBar, Toolbar, Typography, Button, Container, Box,
+    TextField, Grid, Card, CardMedia, CardContent, CardActions,
+    Chip, Stack
+} from '@mui/material';
+import {
+    Search,
+    LocationOn
+} from '@mui/icons-material';
+import { useNavigate } from "react-router-dom";
+import MuiSelect from '../components/common/Select';
+import { useState } from 'react';
+import { RentalDatePicker } from "../components/common/DatePicker";
+import dayjs from "dayjs";
 
-const Home = () => {
+const FLEET = [
+    { id: 1, name: 'Tesla Model 3', type: 'Electric', price: 89, image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=400' },
+    { id: 2, name: 'BMW X5', type: 'Luxury SUV', price: 120, image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=400' },
+    { id: 3, name: 'Audi A4', type: 'Sedan', price: 75, image: 'https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?auto=format&fit=crop&w=400' },
+];
+const Types = [
+    { label: "All types", value: "all" },
+    { label: "Electric", value: "ev" },
+    { label: "Luxury", value: "luxury" },
+];
+
+export default function Home() {
+    const navigate = useNavigate();
+    const [selectTypes, setSelectTypes] = useState(Types[0].value)
+    const [pickupDate, setPickupDate] = useState(dayjs());
+    const [returnDate, setReturnDate] = useState(dayjs().add(3, 'day'));
+
+    const handlePickupChange = (newDate) => {
+        setPickupDate(newDate);
+
+        // If new pickup is after or same as current return, move return to pickup + 1 day
+        if (newDate && (newDate.isAfter(returnDate) || newDate.isSame(returnDate, 'day'))) {
+            setReturnDate(newDate.add(1, 'day'));
+        }
+    };
+
     return (
-        <Box sx={{ minHeight: "100vh", bgcolor: "#f5f5f5" }}>
-            {/* HERO SECTION */}
-            <Box sx={{ bgcolor: "#000", color: "#fff", py: 10 }}>
+        <Box sx={{ flexGrow: 1, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
+            {/* Navbar */}
+            <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'white', color: 'black', borderBottom: '1px solid #ddd' }}>
                 <Container maxWidth="lg">
-                    <Grid container spacing={6} alignItems="center">
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="h3" fontWeight="bold" gutterBottom>
-                                Rent Your Perfect Car
-                            </Typography>
-                            <Typography variant="body1" color="gray" mb={4}>
-                                Affordable, reliable and fast car rentals across the city.
-                            </Typography>
-                            <Button variant="contained" size="large">
-                                Book Now
-                            </Button>
-                        </Grid>
-
-                        <Grid item xs={12} md={6}>
-                            <Box
-                                component="img"
-                                src="/car-hero.png"
-                                alt="Car"
-                                sx={{ width: "100%", borderRadius: 3, boxShadow: 4 }}
-                            />
-                        </Grid>
-                    </Grid>
+                    <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: '#1A237E' }}>
+                            DRIVE<span style={{ color: '#2E7D32' }}>FLOW</span>
+                        </Typography>
+                        <Stack direction="row" spacing={2}>
+                            <Button color="inherit">Manage Bookings</Button>
+                            <Button variant="contained" sx={{ bgcolor: '#1A237E' }} onClick={() => navigate("/login")}>Sign In</Button>
+                        </Stack>
+                    </Toolbar>
                 </Container>
-            </Box>
+            </AppBar>
 
-            {/* SEARCH SECTION */}
-            <Container maxWidth="lg" sx={{ mt: -6 }}>
-                <Card sx={{ borderRadius: 3, boxShadow: 6 }}>
-                    <CardContent>
-                        <Grid container spacing={2}>
+            {/* Hero Search Section */}
+            <Box sx={{ bgcolor: '#1A237E', py: 10, color: 'white' }}>
+                <Container maxWidth="lg">
+                    <Typography variant="h2" textAlign="center" gutterBottom sx={{ fontWeight: 800, mb: 4 }}>
+                        Rent the future of driving.
+                    </Typography>
+
+                    <Box sx={{ bgcolor: 'white', p: 4, borderRadius: 6, backdropFilter: 'blur(20px)', border: '1px solid #ffffff33' }}>
+                        <Grid container spacing={2} alignItems="flex-start">
+                            {/* Location Input */}
                             <Grid item xs={12} md={3}>
-                                <TextField fullWidth label="Location" />
+                                <TextField
+                                    fullWidth
+                                    label="Pickup Location"
+                                    placeholder="City or Airport"
+                                    variant="outlined"
+                                    sx={{ bgcolor: 'white', borderRadius: 2 }}
+                                    InputProps={{ startAdornment: <LocationOn sx={{ color: 'gray', mr: 1 }} /> }}
+                                />
                             </Grid>
-                            <Grid item xs={12} md={3}>
-                                <TextField fullWidth type="date" label="Pick-up Date" InputLabelProps={{ shrink: true }} />
+
+                            {/* REUSABLE PICKUP DATE */}
+                            <Grid item xs={12} md={2.5}>
+                                <RentalDatePicker
+                                    label="Pickup Date"
+                                    value={pickupDate}
+                                    onChange={handlePickupChange}
+                                    minDate={dayjs()}
+                                />
                             </Grid>
-                            <Grid item xs={12} md={3}>
-                                <TextField fullWidth type="date" label="Drop-off Date" InputLabelProps={{ shrink: true }} />
+
+                            {/* REUSABLE RETURN DATE */}
+                            <Grid item xs={12} md={2.5}>
+                                <RentalDatePicker
+                                    label="Return Date"
+                                    value={returnDate}
+                                    onChange={(val) => setReturnDate(val)}
+                                    minDate={pickupDate ? pickupDate.add(1, 'day') : dayjs()}
+                                />
                             </Grid>
-                            <Grid item xs={12} md={3}>
-                                <Button fullWidth variant="contained" size="large" sx={{ height: "100%" }}>
-                                    Search Cars
+
+                            {/* Car Type Select */}
+                            <Grid item xs={12} md={2.5}>
+                                <Grid item xs={12} md={2.5}>
+                                    <MuiSelect
+                                        label="Types"
+                                        value={selectTypes}
+                                        onChange={(e) => setSelectTypes(e.target.value)}
+                                        options={Types}
+                                        required
+                                    />
+                                </Grid>
+                            </Grid>
+
+                            {/* Search Button */}
+                            <Grid item xs={12} md={1.5}>
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    sx={{ height: '56px', bgcolor: '#2E7D32', fontSize: '1.1rem', borderRadius: 2, '&:hover': { bgcolor: '#1b5e20' } }}
+                                >
+                                    <Search />
                                 </Button>
                             </Grid>
                         </Grid>
-                    </CardContent>
-                </Card>
-            </Container>
+                    </Box>
+                </Container>
+            </Box>
 
-            {/* FEATURES SECTION */}
-            <Container maxWidth="lg" sx={{ py: 10 }}>
+            {/* Fleet Listing */}
+            <Container maxWidth="lg" sx={{ py: 6 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 4 }}>Available for You</Typography>
                 <Grid container spacing={4}>
-                    {[{
-                        icon: <DirectionsCarIcon fontSize="large" />,
-                        title: "Wide Range of Cars",
-                        desc: "SUVs, Sedans, Luxury & more"
-                    }, {
-                        icon: <SecurityIcon fontSize="large" />,
-                        title: "Secure Booking",
-                        desc: "100% safe and secure payments"
-                    }, {
-                        icon: <LocationOnIcon fontSize="large" />,
-                        title: "Multiple Locations",
-                        desc: "Pick-up and drop anywhere"
-                    }].map((item, index) => (
-                        <Grid item xs={12} md={4} key={index}>
-                            <Card sx={{ borderRadius: 3, textAlign: "center", py: 4 }}>
+                    {FLEET.map((car) => (
+                        <Grid item key={car.id} xs={12} sm={6} md={4}>
+                            <Card sx={{ borderRadius: 4, transition: '0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 } }}>
+                                <CardMedia component="img" height="200" image={car.image} alt={car.name} />
                                 <CardContent>
-                                    <Box mb={2}>{item.icon}</Box>
-                                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                                        {item.title}
-                                    </Typography>
-                                    <Typography color="text.secondary">
-                                        {item.desc}
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                                        <Typography variant="h6" fontWeight="bold">{car.name}</Typography>
+                                        <Chip label={car.type} size="small" color={car.type === 'Electric' ? 'success' : 'primary'} variant="outlined" />
+                                    </Stack>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Free cancellation • Instant confirmation
                                     </Typography>
                                 </CardContent>
+                                <CardActions sx={{ p: 2, justifyContent: 'space-between', borderTop: '1px solid #eee' }}>
+                                    <Typography variant="h6" color="#2E7D32" fontWeight="bold">
+                                        ${car.price}<small>/day</small>
+                                    </Typography>
+                                    <Button variant="contained" sx={{ borderRadius: 2, textTransform: 'none', bgcolor: '#1A237E' }}>
+                                        Book Now
+                                    </Button>
+                                </CardActions>
                             </Card>
                         </Grid>
                     ))}
                 </Grid>
             </Container>
-
-            {/* FOOTER */}
-            <Box sx={{ bgcolor: "#111", color: "#aaa", py: 3, textAlign: "center" }}>
-                © {new Date().getFullYear()} Car Rental App. All rights reserved.
-            </Box>
         </Box>
     );
-};
-
-export default Home;
+}
