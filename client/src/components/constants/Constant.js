@@ -14,7 +14,9 @@ export const PASSWORD_TOOLTIP = [
 
 // Field helper / error messages
 export const EMAIL_VALID_MSG = "Email must contain @ and domain (example: name@email.com)";
-export const EMAIL_EXISTS_MSG = "This email is already registered. Please login instead.";
+export const EMAIL_EXISTS_MSG = "Redirecting you to the login page in 3 seconds...";
+export const CATCH_ERR_MSG = "Something went wrong. Please try again.";
+export const SIGNUP_FAILED = "Signup failed";
 
 export const FILL_ALL_FIELDS_MSG = "Please fill all fields.";
 export const INVALID_EMAIL_MSG = "Invalid email format. Please enter a valid email.";
