@@ -9,7 +9,7 @@ import {
 
 import {
   LOGIN_TITLE, LOGIN_BUTTON_TEXT, LOGIN_LOADING_TEXT, NEW_USER_TEXT, SIGNUP_LINK_TEXT, SIGNUP_HERE_TEXT,
-  LOGIN_INVALID_MSG, FORGOT_PASSWORD_LINK_TEXT
+  LOGIN_INVALID_MSG, FORGOT_PASSWORD_LINK_TEXT, CATCH_ERR_MSG
 } from "../components/constants/Constant";
 
 import { validateEmail, validatePassword, validateLoginSubmit } from "../components/auth/Validators";
@@ -47,11 +47,9 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(loginUser(formData));
-
     setError("");
 
-    // ✅ submit-level checks (dummy creds for now)
+    // ✅ submit-level checks
     const result = validateLoginSubmit(formData.email, formData.password);
     if (!result.ok) {
       setError(result.message || LOGIN_INVALID_MSG);
@@ -60,11 +58,33 @@ const Login = () => {
 
     setIsLoading(true);
 
-    // TEMP success (backend later)
-    setTimeout(() => {
+    try {
+      const action = await dispatch(loginUser(formData));
+
+      if (loginUser.rejected.match(action)) {
+        const code = action.payload?.code;
+        const backendMsg =
+          action.payload?.message || action.error?.message || LOGIN_INVALID_MSG;
+        
+        // Handle specific error codes from backend
+        if (code === "INVALID_EMAIL" || code === "INVALID_PASS") {
+          setError(backendMsg);
+        } else {
+          setError(backendMsg);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // Login successful - email exists and password is correct, navigate to home page
+      if (loginUser.fulfilled.match(action)) {
+        setIsLoading(false);
+        navigate("/");
+      }
+    } catch (err) {
       setIsLoading(false);
-      navigate("/");
-    }, 400);
+      setError(CATCH_ERR_MSG);
+    }
   };
 
   return (
