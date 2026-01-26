@@ -14,7 +14,10 @@
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.3",
+<<<<<<< HEAD
+=======
     "dayjs": "^1.11.19",
+>>>>>>> 00f13881274fccaf7fc544b51ef3f1203bd36aef
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-redux": "^9.2.0",
