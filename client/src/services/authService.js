@@ -25,7 +25,7 @@ export const getUsersAPI = async (token) => {
 
 export const forgotPassword = async (email) => {
   try {
-    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+    const response = await fetch(`${API_URL}/forgot-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -36,7 +36,10 @@ export const forgotPassword = async (email) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to send reset link");
+      // Create error object with response data for proper handling
+      const error = new Error(data.message || "Failed to verify email");
+      error.response = { data };
+      throw error;
     }
 
     return data;
@@ -45,14 +48,14 @@ export const forgotPassword = async (email) => {
   }
 };
 
-export const resetPassword = async (token, password) => {
+export const resetPassword = async (email, password) => {
   try {
-    const response = await fetch(`${API_URL}/auth/reset-password`, {
+    const response = await fetch(`${API_URL}/reset-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await response.json();
