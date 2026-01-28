@@ -91,44 +91,25 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-// Forgot Password - Generate reset token/OTP
+// Forgot Password - Check if email exists
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
         const user = await User.findOne({ email });
         if (!user) {
-            // For security, don't reveal if email exists
-            return res.status(200).json({
-                success: true,
-                message: "If the email exists, a password reset link has been sent."
+            // Email doesn't exist - ask user to sign up
+            return res.status(400).json({
+                success: false,
+                code: "EMAIL_NOT_FOUND",
+                message: "Email not found. Please sign up to create an account."
             });
         }
 
-        // Generate reset token (OTP-like 6-digit code or token)
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        console.log(resetToken)
-        const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
-
-        // Save reset token to user
-        user.resetToken = resetToken;
-        user.resetTokenExpiry = resetTokenExpiry;
-        await user.save();
-
-        // In production, send email with reset link
-        // For now, we'll return the token (in production, this should be sent via email)
-        // Reset link format: /reset-password?token=RESET_TOKEN
-        const resetLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
-
-        // TODO: Send email with resetLink using nodemailer or similar
-        // For development, log the link
-        console.log("Password reset link:", resetLink);
-
+        // Email exists - allow user to reset password
         res.status(200).json({
             success: true,
-            message: "If the email exists, a password reset link has been sent.",
-            // Remove this in production - only for development
-            resetToken: process.env.NODE_ENV === "development" ? resetToken : undefined
+            message: "Email verified. You can now reset your password."
         });
     } catch (error) {
         res.status(500).json({
@@ -138,35 +119,33 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// Reset Password - Verify token and update password
+// Reset Password - Update password using email
 exports.resetPassword = async (req, res) => {
     try {
-        const { token, password } = req.body;
+        const { email, password } = req.body;
 
-        if (!token || !password) {
+        if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Token and password are required"
+                message: "Email and password are required"
             });
         }
 
-        // Find user with valid reset token
-        const user = await User.findOne({
-            resetToken: token,
-            resetTokenExpiry: { $gt: Date.now() } // Token not expired
-        });
+        // Find user by email
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid or expired reset token"
+                message: "User not found"
             });
         }
 
-        // Update password
-        user.password = password;
-        user.resetToken = undefined;
-        user.resetTokenExpiry = undefined;
+        // Hash the new password before saving
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Update password (remove old password, set new hashed password)
+        user.password = hashedPassword;
         await user.save();
 
         res.status(200).json({

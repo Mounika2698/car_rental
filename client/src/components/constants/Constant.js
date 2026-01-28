@@ -58,5 +58,7 @@ export const LOGIN_FILL_FIELDS_MSG = "Please enter email and password.";
 export const FORGOT_PASSWORD_TITLE = "Forgot Password";
 export const FORGOT_PASSWORD_DESCRIPTION = "Enter your registered email address to reset your password.";
 export const FORGOT_PASSWORD_BUTTON_TEXT = "Continue";
+export const FORGOT_PASSWORD_LOADING_TEXT = "Sending...";
 export const FORGOT_PASSWORD_REMEMBER_TEXT = "Remember your password?";
 export const FORGOT_PASSWORD_SIGNIN_LINK = "Sign In";
+export const EMAIL_NOT_FOUND_MSG = "Email not found. Please sign up to create an account.";
