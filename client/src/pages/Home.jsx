@@ -1,5 +1,5 @@
 import {
-    AppBar, Toolbar, Typography, Button, Container, Box,
+    Typography, Button, Container, Box,
     TextField, Grid, Card, CardMedia, CardContent, CardActions,
     Chip, Stack
 } from '@mui/material';
@@ -7,10 +7,11 @@ import {
     Search,
     LocationOn
 } from '@mui/icons-material';
-import { useNavigate } from "react-router-dom";
 import MuiSelect from '../components/common/Select';
 import { useState } from 'react';
 import { RentalDatePicker } from "../components/common/DatePicker";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
 import dayjs from "dayjs";
 
 const FLEET = [
@@ -25,7 +26,6 @@ const Types = [
 ];
 
 export default function Home() {
-    const navigate = useNavigate();
     const [selectTypes, setSelectTypes] = useState(Types[0].value)
     const [pickupDate, setPickupDate] = useState(dayjs());
     const [returnDate, setReturnDate] = useState(dayjs().add(3, 'day'));
@@ -40,22 +40,8 @@ export default function Home() {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-            {/* Navbar */}
-            <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'white', color: 'black', borderBottom: '1px solid #ddd' }}>
-                <Container maxWidth="lg">
-                    <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, color: '#1A237E' }}>
-                            DRIVE<span style={{ color: '#2E7D32' }}>FLOW</span>
-                        </Typography>
-                        <Stack direction="row" spacing={2}>
-                            <Button color="inherit">Manage Bookings</Button>
-                            <Button variant="contained" sx={{ bgcolor: '#1A237E' }} onClick={() => navigate("/login")}>Sign In</Button>
-                        </Stack>
-                    </Toolbar>
-                </Container>
-            </AppBar>
-
+        <Box sx={{ flexGrow: 1, bgcolor: '#f5f7fa', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Header />
             {/* Hero Search Section */}
             <Box sx={{ bgcolor: '#1A237E', py: 10, color: 'white' }}>
                 <Container maxWidth="lg">
@@ -126,7 +112,7 @@ export default function Home() {
             </Box>
 
             {/* Fleet Listing */}
-            <Container maxWidth="lg" sx={{ py: 6 }}>
+            <Container maxWidth="lg" sx={{ py: 6, flexGrow: 1 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 4 }}>Available for You</Typography>
                 <Grid container spacing={4}>
                     {FLEET.map((car) => (
@@ -155,6 +141,7 @@ export default function Home() {
                     ))}
                 </Grid>
             </Container>
+            <Footer />
         </Box>
     );
 }
