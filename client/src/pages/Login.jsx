@@ -6,6 +6,8 @@ import { loginUser } from '../redux/slice/authSlice'
 import {
   Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
 } from "../components";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
 
 import {
   LOGIN_TITLE, LOGIN_BUTTON_TEXT, LOGIN_LOADING_TEXT, NEW_USER_TEXT, SIGNUP_LINK_TEXT, SIGNUP_HERE_TEXT,
@@ -88,61 +90,65 @@ const Login = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box sx={{ mt: 8 }}>
-        <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
-          <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
-            {LOGIN_TITLE}
-          </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header />
+      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+        <Container component="main" maxWidth="xs">
+          <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
+            <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
+              {LOGIN_TITLE}
+            </Typography>
 
-          <Alert severity="error" text={error} />
+            <Alert severity="error" text={error} />
 
-          <form onSubmit={handleSubmit}>
-            {/* ✅ Email real-time validation */}
-            <TextField
-              label="Email Address"
-              name="email"
-              value={formData.email}
-              onChange={handleLoginChange}
-              required
-              error={emailRes.error}
-              helperText={emailRes.helperText}
-            />
+            <form onSubmit={handleSubmit}>
+              {/* ✅ Email real-time validation */}
+              <TextField
+                label="Email Address"
+                name="email"
+                value={formData.email}
+                onChange={handleLoginChange}
+                required
+                error={emailRes.error}
+                helperText={emailRes.helperText}
+              />
 
-            {/* ✅ Password real-time validation */}
-            <TextField
-              label="Password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleLoginChange}
-              required
-              error={passwordRes.error}
-              helperText={passwordRes.helperText}
-            />
+              {/* ✅ Password real-time validation */}
+              <TextField
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleLoginChange}
+                required
+                error={passwordRes.error}
+                helperText={passwordRes.helperText}
+              />
 
-            {/* Optional password rules help */}
-            <PasswordRulesTooltip />
+              {/* Optional password rules help */}
+              <PasswordRulesTooltip />
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-              <Link to="/forgot-password" sx={{ fontSize: '0.875rem' }}>
-                {FORGOT_PASSWORD_LINK_TEXT}
-              </Link>
-            </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                <Link to="/forgot-password" sx={{ fontSize: '0.875rem' }}>
+                  {FORGOT_PASSWORD_LINK_TEXT}
+                </Link>
+              </Box>
 
-            <Button
-              text={isLoading ? LOGIN_LOADING_TEXT : LOGIN_BUTTON_TEXT}
-              type="submit"
-              disabled={!formValid || isLoading}
-            />
-          </form>
+              <Button
+                text={isLoading ? LOGIN_LOADING_TEXT : LOGIN_BUTTON_TEXT}
+                type="submit"
+                disabled={!formValid || isLoading}
+              />
+            </form>
 
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            {NEW_USER_TEXT} <Link to="/signup">{SIGNUP_LINK_TEXT}</Link> {SIGNUP_HERE_TEXT}
-          </Typography>
-        </Paper>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+              {NEW_USER_TEXT} <Link to="/signup">{SIGNUP_LINK_TEXT}</Link> {SIGNUP_HERE_TEXT}
+            </Typography>
+          </Paper>
+        </Container>
       </Box>
-    </Container>
+      <Footer />
+    </Box>
   );
 };
 
