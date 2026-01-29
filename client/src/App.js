@@ -6,6 +6,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
 import Home from "./pages/Home";
 import Dashboard from './pages/Dashboard'
+import ManageBooking from "./pages/ManageBooking";
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
         <Route path="/Dashboard" element={
           <ProtectedRoutes><Dashboard /> </ProtectedRoutes>
         } />
+        <Route path="/manage-bookings" element={<ManageBooking />} />
       </Routes>
     </Router>
   )
