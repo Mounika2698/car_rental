@@ -19,6 +19,8 @@ import { useNavigate } from "react-router-dom";
 import MuiSelect from "../components/common/Select";
 import { useEffect, useState } from "react";
 import { RentalDatePicker } from "../components/common/DatePicker";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
 import dayjs from "dayjs";
 
 // Redux
@@ -224,6 +226,7 @@ export default function Home() {
                     </Grid>
                 )}
             </Container>
+            <Footer />
         </Box>
     );
 }

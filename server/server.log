@@ -1,0 +1,4 @@
+[dotenv@17.2.3] injecting env (3) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Server running on port 5001
+MongoDB connection failed querySrv ECONNREFUSED _mongodb._tcp.carrental.tvchwsc.mongodb.net
+Server will continue but database operations will fail

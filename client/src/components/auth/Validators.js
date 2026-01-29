@@ -127,15 +127,12 @@ export function validateLoginSubmit(email, password) {
     return { ok: false, message: LOGIN_FILL_FIELDS_MSG };
   }
 
-  // TEMP dummy logic (replace with backend)
-  const dummyUser = "admin@car.com";
-  const dummyPass = "password123";
-
-  const normalizedEmail = email.trim().toLowerCase();
-
-  if (normalizedEmail !== dummyUser || password !== dummyPass) {
-    return { ok: false, message: LOGIN_INVALID_MSG };
+  // Basic email format validation
+  const emailRes = validateEmail(email);
+  if (!emailRes.valid) {
+    return { ok: false, message: INVALID_EMAIL_MSG };
   }
 
+  // Let backend handle actual authentication
   return { ok: true, message: "" };
 }
