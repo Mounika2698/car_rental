@@ -9,16 +9,17 @@ exports.signup = async (req, res) => {
         normalizedEmail = (email || "").trim().toLowerCase();
         const userExists = await User.findOne({ email });
         if (userExists) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 code: "EMAIL_EXISTS",
-                message: "This email is already registered. Please log in." });
+                message: "This email is already registered. Please log in."
+            });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
             name,
-            email :normalizedEmail,
+            email: normalizedEmail,
             password: hashedPassword
         });
 
@@ -31,11 +32,11 @@ exports.signup = async (req, res) => {
             }
         });
     } catch (error) {
-    return res.status(500).json({
-      code: "SERVER_ERROR",
-      message: error.message,
-    });
-  }
+        return res.status(500).json({
+            code: "SERVER_ERROR",
+            message: error.message,
+        });
+    }
 };
 
 /**
@@ -105,7 +106,6 @@ exports.forgotPassword = async (req, res) => {
 
         // Generate reset token (OTP-like 6-digit code or token)
         const resetToken = crypto.randomBytes(32).toString("hex");
-        console.log(resetToken)
         const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
 
         // Save reset token to user
@@ -120,7 +120,6 @@ exports.forgotPassword = async (req, res) => {
 
         // TODO: Send email with resetLink using nodemailer or similar
         // For development, log the link
-        console.log("Password reset link:", resetLink);
 
         res.status(200).json({
             success: true,

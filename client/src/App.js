@@ -6,6 +6,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
 import Home from "./pages/Home";
 import Dashboard from './pages/Dashboard'
+import Booking from './pages/Booking'
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={<Home />} />
+        <Route path="/book/:carId" element={<Booking />} />
         {/* Producted routes */}
         <Route path="/Dashboard" element={
           <ProtectedRoutes><Dashboard /> </ProtectedRoutes>
