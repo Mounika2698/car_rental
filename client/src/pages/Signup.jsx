@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
 } from "../components/index";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
 
 import {
   SIGNUP_TITLE, ALREADY_HAVE_ACCOUNT_TEXT, SIGNIN_LINK_TEXT, SIGNUP_BUTTON_TEXT, SIGNUP_LOADING_TEXT, SIGNUP_SUCCESS_MSG, 
@@ -89,70 +91,74 @@ const Signup = () => {
   };
 
   return (
-    <Container>
-      <Box sx={{ mt: 8 }}>
-        <Paper>
-          <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
-            {SIGNUP_TITLE}
-          </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header />
+      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+        <Container>
+          <Paper>
+            <Typography variant="h5" align="center" sx={{ fontWeight: "bold", mb: 3 }}>
+              {SIGNUP_TITLE}
+            </Typography>
 
-          <Alert severity="error" text={error} />
-          <Alert severity="success" text={success} />
+            <Alert severity="error" text={error} />
+            <Alert severity="success" text={success} />
 
-          <TextField
-            label="Full Name"
-            name="name"
-            value={formData.name}
-            onChange={handleSignupChange}
-            required
-          />
+            <TextField
+              label="Full Name"
+              name="name"
+              value={formData.name}
+              onChange={handleSignupChange}
+              required
+            />
 
-          <TextField
-            label="Email Address"
-            name="email"
-            value={formData.email}
-            onChange={handleSignupChange}
-            required
-            error={emailRes.error}
-            helperText={emailRes.helperText}
-          />
+            <TextField
+              label="Email Address"
+              name="email"
+              value={formData.email}
+              onChange={handleSignupChange}
+              required
+              error={emailRes.error}
+              helperText={emailRes.helperText}
+            />
 
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleSignupChange}
-            required
-            error={passwordRes.error}
-            helperText={passwordRes.helperText}
-          />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleSignupChange}
+              required
+              error={passwordRes.error}
+              helperText={passwordRes.helperText}
+            />
 
-          <PasswordRulesTooltip />
+            <PasswordRulesTooltip />
 
-          <TextField
-            label="Confirm Password"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleSignupChange}
-            required
-            error={confirmRes.error}
-            helperText={confirmRes.helperText}
-          />
+            <TextField
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleSignupChange}
+              required
+              error={confirmRes.error}
+              helperText={confirmRes.helperText}
+            />
 
-          <Button
-            text={isLoading ? SIGNUP_LOADING_TEXT : SIGNUP_BUTTON_TEXT}
-            onClick={handleSignup}
-            disabled={!formValid || isLoading}
-          />
+            <Button
+              text={isLoading ? SIGNUP_LOADING_TEXT : SIGNUP_BUTTON_TEXT}
+              onClick={handleSignup}
+              disabled={!formValid || isLoading}
+            />
 
-          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-            {ALREADY_HAVE_ACCOUNT_TEXT} <Link to="/login">{SIGNIN_LINK_TEXT}</Link>
-          </Typography>
-        </Paper>
+            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+              {ALREADY_HAVE_ACCOUNT_TEXT} <Link to="/login">{SIGNIN_LINK_TEXT}</Link>
+            </Typography>
+          </Paper>
+        </Container>
       </Box>
-    </Container>
+      <Footer />
+    </Box>
   );
 };
 

@@ -9,16 +9,17 @@ exports.signup = async (req, res) => {
         normalizedEmail = (email || "").trim().toLowerCase();
         const userExists = await User.findOne({ email });
         if (userExists) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 code: "EMAIL_EXISTS",
-                message: "This email is already registered. Please log in." });
+                message: "This email is already registered. Please log in."
+            });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
             name,
-            email :normalizedEmail,
+            email: normalizedEmail,
             password: hashedPassword
         });
 
@@ -31,11 +32,11 @@ exports.signup = async (req, res) => {
             }
         });
     } catch (error) {
-    return res.status(500).json({
-      code: "SERVER_ERROR",
-      message: error.message,
-    });
-  }
+        return res.status(500).json({
+            code: "SERVER_ERROR",
+            message: error.message,
+        });
+    }
 };
 
 /**
@@ -47,14 +48,18 @@ exports.login = async (req, res) => {
 
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({code: "INVALID_EMAIL",
-                message: "Email does not exist" });
+            return res.status(400).json({
+                code: "INVALID_EMAIL",
+                message: "Email does not exist"
+            });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({code: "INVALID_PASS",
-                message: "Password is incorrect" }); // email exists but password is incorrect
+            return res.status(400).json({
+                code: "INVALID_PASS",
+                message: "Password is incorrect"
+            }); // email exists but password is incorrect
         }
 
         const token = jwt.sign(
@@ -106,7 +111,23 @@ exports.forgotPassword = async (req, res) => {
             });
         }
 
-        // Email exists - allow user to reset password
+        // Generate reset token (OTP-like 6-digit code or token)
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+
+        // Save reset token to user
+        user.resetToken = resetToken;
+        user.resetTokenExpiry = resetTokenExpiry;
+        await user.save();
+
+        // In production, send email with reset link
+        // For now, we'll return the token (in production, this should be sent via email)
+        // Reset link format: /reset-password?token=RESET_TOKEN
+        const resetLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
+
+        // TODO: Send email with resetLink using nodemailer or similar
+        // For development, log the link
+
         res.status(200).json({
             success: true,
             message: "Email verified. You can now reset your password."
@@ -143,7 +164,7 @@ exports.resetPassword = async (req, res) => {
 
         // Hash the new password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
-        
+
         // Update password (remove old password, set new hashed password)
         user.password = hashedPassword;
         await user.save();

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import MuiSelect from "../components/common/Select";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RentalDatePicker } from "../components/common/DatePicker";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
 import dayjs from "dayjs";
 import Autocomplete from "@mui/material/Autocomplete";
 import CircularProgress from "@mui/material/CircularProgress";
