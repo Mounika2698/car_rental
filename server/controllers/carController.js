@@ -48,14 +48,36 @@ exports.getCars = (req, res) => {
 exports.getCarById = (req, res) => {
     try {
         const { id } = req.params;
+        const { location = "", pickupDate = "", returnDate = "" } = req.query;
         const car = FLEET.find((c) => c._id === id);
 
         if (!car) {
             return res.status(404).json({ message: "Car not found" });
         }
 
-        res.json(car);
+       return res.json({
+      ...car,
+      location,
+      pickupDate,
+      returnDate,
+    });
     } catch (error) {
         res.status(500).json({ message: "Server error while fetching car" });
     }
 };
+
+exports.searchCars = (req, res) => {
+  try {
+    const { type = "all", location = "", pickupDate = "", returnDate = "" } = req.query;
+
+    let cars = [...FLEET];
+    if (type && type !== "all") cars = cars.filter((c) => c.type === type);
+
+    return res.json({
+      cars: cars.map((c) => ({ ...c, location, pickupDate, returnDate })),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error while searching cars" });
+  }
+};
+

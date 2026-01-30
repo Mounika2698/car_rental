@@ -128,11 +128,13 @@ const Login = () => {
               {/* Optional password rules help */}
               <PasswordRulesTooltip />
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                <Link to="/forgot-password" sx={{ fontSize: '0.875rem' }}>
-                  {FORGOT_PASSWORD_LINK_TEXT}
-                </Link>
-              </Box>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+            <Link to="/forgot-password">
+              {FORGOT_PASSWORD_LINK_TEXT}
+            </Link>
+            </Typography>
+            </Box>
 
               <Button
                 text={isLoading ? LOGIN_LOADING_TEXT : LOGIN_BUTTON_TEXT}
