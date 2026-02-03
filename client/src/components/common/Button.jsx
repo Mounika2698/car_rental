@@ -1,27 +1,15 @@
-
 import { Button as MuiButton } from "@mui/material";
 
-const Button = ({
-  text,
-  onClick,
-  type = "button",
-  disabled = false,
-  variant = "contained",
-  color = "primary"
-}) => {
+export default function Button({ children, sx = {}, ...props }) {
   return (
     <MuiButton
-      type={type}
-      fullWidth
-      variant={variant}
-      color={color}
-      disabled={disabled}
-      onClick={onClick}
-      sx={{ mt: 2 }}
+      {...props}
+      sx={{
+        textTransform: "none",
+        ...sx, // IMPORTANT: spread sx LAST so caller can override
+      }}
     >
-      {text}
+      {children}
     </MuiButton>
   );
-};
-
-export default Button;
+}

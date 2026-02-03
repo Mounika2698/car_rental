@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
-} from "../components/index";
+  Container, Box, Paper, Typography, Link, TextField, Button, Alert} from "../components/index";
+import { PasswordRulesTooltip } from "../components";
 import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
 

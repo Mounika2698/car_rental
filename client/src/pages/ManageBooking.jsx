@@ -1,69 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Typography, Button, Container, Box, TextField, Stack, Paper, Divider, Alert, Chip,
-  InputAdornment, useMediaQuery, Autocomplete, CircularProgress, Card, CardContent, CardActions,
-  Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, IconButton
-} from "@mui/material";
-import { LocationOn, Badge, Person, Visibility, Replay, Cancel, Description } from "@mui/icons-material";
-import { Link, useNavigate } from "react-router-dom";
-import Header from "../components/common/Header";
-import Footer from "../components/common/Footer";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { generateAgreementPdf } from "../utils/generateAgreementPdf";
+import { Box, Button, Container, Typography, TextField, Stack, Paper, Divider, Alert, Chip, InputAdornment, Card, 
+  CardContent, CardActions, IconButton, useMediaQuery, Link, Table, TableHead, TableRow, TableCell, TableBody, Dialog,
+  DialogTitle, DialogContent, Header, Footer, LocationAutocomplete } from "../components";
 
-/**
- * Location helpers
- */
-const BAD_CLASSES = ["amenity", "tourism", "shop", "leisure", "building", "office", "man_made"];
-const PLACE_TYPES = ["state", "city", "town", "village", "municipality", "suburb", "hamlet", "locality"];
-
-const getZip = (addr) => String(addr?.postcode || "").match(/\b\d{5}\b/)?.[0] || "";
-const getCity = (addr) => addr?.city || addr?.town || addr?.village || addr?.municipality || "";
-const getState = (addr) => addr?.state || addr?.region || "";
-const getDisplayName = (item) => (item?.display_name || "").split(",")[0]?.trim() || "";
-const isZipQuery = (q) => /^\d{5}$/.test(String(q || "").trim());
-
-async function reverseLookupAddress(lat, lon, signal) {
-  const rev = new URL("https://nominatim.openstreetmap.org/reverse");
-  rev.searchParams.set("format", "jsonv2");
-  rev.searchParams.set("addressdetails", "1");
-  rev.searchParams.set("lat", String(lat));
-  rev.searchParams.set("lon", String(lon));
-  const r = await fetch(rev.toString(), { signal, headers: { Accept: "application/json" } });
-  if (!r.ok) return null;
-  const revData = await r.json();
-  return revData?.address || null;
-}
-
-function makePrimarySubtitle(item, zipQuery) {
-  const addr = item.address || {};
-  const city = getCity(addr);
-  const state = getState(addr);
-  const zip = getZip(addr);
-  const cls = item.category || item.class; // jsonv2 fix
-
-  let primary = "";
-  if (zipQuery) primary = city ? `${city}, ${state} ${zip}`.trim() : `${state} ${zip}`.trim();
-  else if (cls === "place" && item.type === "state") primary = state || getDisplayName(item) || "State";
-  else if (cls === "aeroway" && item.type === "aerodrome") primary = getDisplayName(item) || "Airport";
-  else primary = city ? `${city}, ${state}`.trim() : (state || getDisplayName(item) || "Location");
-
-  const subtitle = [city, state, zip, "United States"].filter(Boolean).join(", ");
-  return { primary, subtitle, zip };
-}
-
-function useDebouncedValue(value, delayMs = 350) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(t);
-  }, [value, delayMs]);
-  return debounced;
-}
-
-function extractZipFromText(text) {
-  const m = String(text || "").match(/\b\d{5}\b/);
-  return m ? m[0] : "";
-}
+import { Badge, Person, Visibility, Replay, Cancel, Description } from "@mui/icons-material";
 
 function statusChipColor(status) {
   if (status === "UPCOMING") return "primary";
@@ -82,9 +24,6 @@ function daysBetween(a, b) {
   return Math.max(Math.ceil(ms / (1000 * 60 * 60 * 24)), 1);
 }
 
-/**
- * Dummy bookings
- */
 const DUMMY_BOOKINGS = [
   {
     id: 101, reservationNumber: "DF123456", lastName: "Johnson", zipCode: "77001",
@@ -123,35 +62,44 @@ function BookingDetailsModal({ open, onClose, booking }) {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ fontWeight: 900 }}>
         Reservation Details
-        <IconButton onClick={onClose} sx={{ position: "absolute", right: 12, top: 10 }}>✕</IconButton>
+        <IconButton onClick={onClose} sx={{ position: "absolute", right: 12, top: 10 }}>
+          ✕
+        </IconButton>
       </DialogTitle>
+
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Box display="flex" gap={2} alignItems="center">
-            <Box component="img" src={booking.car.imageUrl} alt={booking.car.makeModel} sx={{ width: 140, height: 90, borderRadius: 2, objectFit: "cover" }} />
+            <Box component="img" src={booking.car.imageUrl} alt={booking.car.makeModel}
+              sx={{ width: 140, height: 90, borderRadius: 2, objectFit: "cover" }}
+            />
             <Box>
-              <Typography variant="h6" fontWeight={900}>{booking.car.makeModel}</Typography>
-              <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>{booking.car.makeModel}</Typography>
+              <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap" }}>
                 <Chip label={booking.car.type} size="small" />
                 <Chip label={booking.status} size="small" color={statusChipColor(booking.status)} />
                 <Chip label={booking.paymentStatus} size="small" color={paymentChipColor(booking.paymentStatus)} />
               </Stack>
-              <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>Reservation: <b>{booking.reservationNumber}</b></Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>Area ZIP: <b>{booking.zipCode}</b></Typography>
+              <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>
+                Reservation: <b>{booking.reservationNumber}</b>
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Area ZIP: <b>{booking.zipCode}</b>
+              </Typography>
             </Box>
           </Box>
 
           <Divider />
 
           <Box>
-            <Typography fontWeight={900}>Rental Duration</Typography>
+            <Typography sx={{ fontWeight: 900 }}>Rental Duration</Typography>
             <Typography variant="body2">
               {new Date(booking.pickupDate).toLocaleDateString()} → {new Date(booking.returnDate).toLocaleDateString()} ({duration} days)
             </Typography>
           </Box>
 
           <Box>
-            <Typography fontWeight={900}>Locations</Typography>
+            <Typography sx={{ fontWeight: 900 }}>Locations</Typography>
             <Typography variant="body2">Pickup: {booking.pickupLocation}</Typography>
             <Typography variant="body2">Return: {booking.returnLocation}</Typography>
           </Box>
@@ -159,32 +107,19 @@ function BookingDetailsModal({ open, onClose, booking }) {
           <Divider />
 
           <Box>
-            <Typography fontWeight={900}>Cost Breakdown (MVP)</Typography>
-            <Stack direction="row" justifyContent="space-between"><Typography variant="body2">Base</Typography><Typography variant="body2">${booking.costBreakdown.base.toFixed(2)}</Typography></Stack>
-            <Stack direction="row" justifyContent="space-between"><Typography variant="body2">Fees</Typography><Typography variant="body2">${booking.costBreakdown.fees.toFixed(2)}</Typography></Stack>
-            <Stack direction="row" justifyContent="space-between"><Typography fontWeight={900}>Total</Typography><Typography fontWeight={900}>${booking.costBreakdown.total.toFixed(2)}</Typography></Stack>
-          </Box>
-
-          <Box>
-            <Typography fontWeight={900}>Add-ons</Typography>
-            <Typography variant="body2" color="text.secondary">{(booking.addOns || []).length ? booking.addOns.join(", ") : "None"}</Typography>
-          </Box>
-
-          <Box>
-            <Typography fontWeight={900}>Insurance</Typography>
-            <Typography variant="body2" color="text.secondary">{(booking.insurance || []).length ? booking.insurance.join(", ") : "Standard coverage"}</Typography>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography fontWeight={900}>Invoice</Typography>
-            <Typography variant="body2" color="text.secondary">Invoice PDF coming soon. (MVP placeholder)</Typography>
-          </Box>
-
-          <Box>
-            <Typography fontWeight={900}>QR Code</Typography>
-            <Typography variant="body2" color="text.secondary">QR coming soon. (MVP placeholder)</Typography>
+            <Typography sx={{ fontWeight: 900 }}>Cost Breakdown</Typography>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2">Base</Typography>
+              <Typography variant="body2">${booking.costBreakdown.base.toFixed(2)}</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2">Fees</Typography>
+              <Typography variant="body2">${booking.costBreakdown.fees.toFixed(2)}</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography sx={{ fontWeight: 900 }}>Total</Typography>
+              <Typography sx={{ fontWeight: 900 }}>${booking.costBreakdown.total.toFixed(2)}</Typography>
+            </Stack>
           </Box>
         </Stack>
       </DialogContent>
@@ -192,7 +127,7 @@ function BookingDetailsModal({ open, onClose, booking }) {
   );
 }
 
-export default function ManageBookings() {
+export default function ManageBooking() {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:900px)");
 
@@ -201,119 +136,22 @@ export default function ManageBookings() {
 
   const [locationValue, setLocationValue] = useState(null);
   const [locationInput, setLocationInput] = useState("");
-  const debouncedLocationInput = useDebouncedValue(locationInput, 350);
-
-  const [locationOptions, setLocationOptions] = useState([]);
-  const [locLoading, setLocLoading] = useState(false);
 
   const [msg, setMsg] = useState(null);
-
   const [results, setResults] = useState([]);
+
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const abortRef = useRef(null);
-
-  const selectedZip = useMemo(() => locationValue?.zip || extractZipFromText(locationInput), [locationValue, locationInput]);
-  const selectedCity = useMemo(() => {
-    const a = locationValue?.raw?.address || {};
-    return (a.city || a.town || a.village || locationValue?.primary || "").toLowerCase();
+  const selectedZip = useMemo(() => {
+    const addr = locationValue?.raw?.address || {};
+    return String(addr?.postcode || "").match(/\b\d{5}\b/)?.[0] || "";
   }, [locationValue]);
 
-  // Location suggestions (same logic style as Home, jsonv2 safe)
-  useEffect(() => {
-    const q = debouncedLocationInput.trim();
-
-    if (q.length < 2) {
-      setLocationOptions([]);
-      setLocLoading(false);
-      return;
-    }
-
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const run = async () => {
-      try {
-        setLocLoading(true);
-        const zipQuery = isZipQuery(q);
-
-        const url = new URL("https://nominatim.openstreetmap.org/search");
-        url.searchParams.set("format", "jsonv2");
-        url.searchParams.set("addressdetails", "1");
-        url.searchParams.set("countrycodes", "us");
-        url.searchParams.set("limit", "25");
-        url.searchParams.set("q", q);
-
-        const res = await fetch(url.toString(), { signal: controller.signal, headers: { Accept: "application/json" } });
-        const data = res.ok ? await res.json() : [];
-        let list = Array.isArray(data) ? data : [];
-
-        const getCls = (item) => item.category || item.class;
-
-        list = list.filter((item) => {
-          const cls = getCls(item);
-          if (BAD_CLASSES.includes(cls)) return false;
-          if (cls === "aeroway" && item.type === "aerodrome") return true;
-          if (cls === "place" && PLACE_TYPES.includes(item.type)) return true;
-          if (cls === "boundary" && item.type === "administrative") return true;
-          if (item.type === "postcode") return true;
-          return false;
-        });
-
-        if (zipQuery) {
-          list = list.filter((item) => {
-            const zip = getZip(item.address || {});
-            return zip === q || item.type === "postcode";
-          });
-
-          for (let i = 0; i < Math.min(list.length, 3); i++) {
-            const item = list[i];
-            const addr = item.address || {};
-            const city = getCity(addr);
-            const zip = getZip(addr);
-            if (!city && zip && item.lat && item.lon) {
-              const revAddr = await reverseLookupAddress(item.lat, item.lon, controller.signal);
-              if (revAddr) item.address = { ...addr, ...revAddr };
-            }
-          }
-        }
-
-        const score = (item) => {
-          const cls = getCls(item);
-          if (cls === "place" && item.type === "state") return 120;
-          if (cls === "place" && item.type === "city") return 110;
-          if (cls === "place" && item.type === "town") return 105;
-          if (cls === "place" && item.type === "village") return 100;
-          if (cls === "place" && ["municipality", "suburb", "locality", "hamlet"].includes(item.type)) return 90;
-          if (cls === "aeroway" && item.type === "aerodrome") return 80;
-          if (item.type === "postcode") return 75;
-          if (cls === "boundary" && item.type === "administrative") return 70;
-          return 10;
-        };
-
-        list.sort((a, b) => score(b) - score(a));
-        list = list.slice(0, 10);
-
-        const mapped = list.map((item) => {
-          const { primary, subtitle, zip } = makePrimarySubtitle(item, zipQuery);
-          return { id: String(item.place_id), raw: item, primary, subtitle, zip };
-        });
-
-        setLocationOptions(mapped);
-        setLocLoading(false);
-      } catch (e) {
-        if (e?.name !== "AbortError") {
-          setLocationOptions([]);
-          setLocLoading(false);
-        }
-      }
-    };
-
-    run();
-    return () => controller.abort();
-  }, [debouncedLocationInput]);
+  const selectedCity = useMemo(() => {
+    const addr = locationValue?.raw?.address || {};
+    return (addr?.city || addr?.town || addr?.village || locationValue?.primary || "").toLowerCase();
+  }, [locationValue]);
 
   const canSearch = useMemo(() => (
     lastName.trim().length >= 2 &&
@@ -328,29 +166,27 @@ export default function ManageBookings() {
       return;
     }
 
-    const zip = selectedZip;
-    const city = selectedCity;
-
-    const areaFiltered = DUMMY_BOOKINGS.filter((b) => b.zipCode === zip && b.pickupLocation.toLowerCase().includes(city));
+    const areaFiltered = DUMMY_BOOKINGS.filter(
+      (b) => b.zipCode === selectedZip && b.pickupLocation.toLowerCase().includes(selectedCity)
+    );
     setResults(areaFiltered);
   }, [locationValue, selectedZip, selectedCity]);
 
   const handleSearch = () => {
     setMsg(null);
-    if (!canSearch) return setMsg("ZIP is required. Pick a City/State/ZIP suggestion (no hotels/POIs).");
+    if (!canSearch) return setMsg("ZIP is required. Pick a City/State/ZIP suggestion.");
 
     const ln = lastName.trim().toLowerCase();
     const rn = reservationNumber.trim().toUpperCase();
-    const zip = selectedZip;
 
     const found = DUMMY_BOOKINGS.filter((b) =>
       b.lastName.toLowerCase() === ln &&
       b.reservationNumber.toUpperCase() === rn &&
-      b.zipCode === zip &&
+      b.zipCode === selectedZip &&
       b.pickupLocation.toLowerCase().includes(selectedCity)
     );
 
-    if (!found.length) return setMsg("No reservation found for that Last Name + Reservation + Area ZIP (MVP dummy data).");
+    if (!found.length) return setMsg("No reservation found for that Last Name + Reservation + Area ZIP.");
     setResults(found);
     setMsg(`Found ${found.length} reservation(s).`);
   };
@@ -360,12 +196,14 @@ export default function ManageBookings() {
     setReservationNumber("");
     setLocationValue(null);
     setLocationInput("");
-    setLocationOptions([]);
     setMsg(null);
     setResults([]);
   };
 
-  const openDetails = (booking) => { setSelectedBooking(booking); setDetailsOpen(true); };
+  const openDetails = (booking) => {
+    setSelectedBooking(booking);
+    setDetailsOpen(true);
+  };
 
   const downloadAgreement = (booking) => {
     generateAgreementPdf({
@@ -379,23 +217,16 @@ export default function ManageBookings() {
   };
 
   const rebook = (booking) => {
-    navigate("/book", {
-      state: {
-        car: booking.car,
-        pickupDate: booking.pickupDate,
-        returnDate: booking.returnDate,
-        pickupLocation: booking.pickupLocation,
-        returnLocation: booking.returnLocation,
-      },
-    });
+    navigate("/book", { state: booking });
   };
 
   const cancelReservation = (booking) => {
-    if (booking.status !== "UPCOMING") return setMsg("Only UPCOMING reservations can be cancelled (MVP).");
-    const ok = window.confirm("Are you sure you want to cancel this reservation? (MVP)");
+    if (booking.status !== "UPCOMING") return setMsg("Only UPCOMING reservations can be cancelled.");
+    const ok = window.confirm("Are you sure you want to cancel this reservation?");
     if (!ok) return;
+
     setResults((prev) => prev.map((r) => (r.id === booking.id ? { ...r, status: "CANCELLED" } : r)));
-    setMsg("Reservation cancelled (MVP dummy update).");
+    setMsg("Reservation cancelled (dummy update).");
   };
 
   return (
@@ -417,104 +248,68 @@ export default function ManageBookings() {
         <Paper elevation={0} sx={{ borderRadius: 5, border: "1px solid #e6e8ef", overflow: "hidden", bgcolor: "white" }}>
           <Box sx={{ p: isMobile ? 2.5 : 4 }}>
             <Stack spacing={2.5}>
-              <Box>
-                <Typography variant="h6" fontWeight={900}>Reservation Lookup</Typography>
-                <Typography variant="body2" color="text.secondary">Manage Bookings lookup (MVP).</Typography>
-              </Box>
-
               {msg && (
-                <Alert severity={msg.includes("Found") ? "success" : msg.includes("cancelled") ? "info" : "warning"} onClose={() => setMsg(null)}>
+                <Alert severity={msg.includes("Found") ? "success" : "warning"} onClose={() => setMsg(null)}>
                   {msg}
                 </Alert>
               )}
 
               <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                 <TextField
-                  fullWidth
                   label="Last Name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="e.g., Johnson"
-                  InputProps={{ startAdornment: <InputAdornment position="start"><Person sx={{ color: "text.secondary" }} /></InputAdornment> }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
+
                 <TextField
-                  fullWidth
                   label="Reservation Number"
                   value={reservationNumber}
                   onChange={(e) => setReservationNumber(e.target.value)}
                   placeholder="e.g., DF123456"
-                  InputProps={{ startAdornment: <InputAdornment position="start"><Badge sx={{ color: "text.secondary" }} /></InputAdornment> }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Badge sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Stack>
 
-              <Autocomplete
-                fullWidth
-                options={locationOptions}
+              <LocationAutocomplete
+                label="City / State / ZIP (Required)"
+                placeholder="e.g., Houston or 77001"
                 value={locationValue}
+                onChange={setLocationValue}
                 inputValue={locationInput}
-                onInputChange={(event, newInputValue) => setLocationInput(newInputValue)}
-                onChange={(event, newValue) => setLocationValue(newValue)}
-                loading={locLoading}
-                filterOptions={(x) => x}
-                getOptionLabel={(option) => option?.primary || ""}
-                isOptionEqualToValue={(opt, val) => opt?.id === val?.id}
-                noOptionsText={debouncedLocationInput.trim().length < 2 ? "Type City, State, or ZIP (e.g., 77001)" : "No locations found (try ZIP)"}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="City / State / ZIP (Required)"
-                    placeholder="e.g., Houston or 77001"
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: <InputAdornment position="start"><LocationOn sx={{ color: "text.secondary" }} /></InputAdornment>,
-                      endAdornment: <>
-                        {locLoading ? <CircularProgress size={18} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>,
-                    }}
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <li {...props} key={option.id} style={{ padding: 12 }}>
-                    <Box>
-                      <Typography sx={{ fontWeight: 900, lineHeight: 1.2 }}>{option.primary}</Typography>
-                      <Typography variant="body2" sx={{ color: "text.secondary" }}>{option.subtitle}</Typography>
-                    </Box>
-                  </li>
-                )}
+                onInputChange={(e, v) => setLocationInput(v)}
+                minChars={2}
+                limit={10}
               />
-
-              {locationValue && !/^\d{5}$/.test(selectedZip) && (
-                <Alert severity="warning">ZIP is required. Please pick a suggestion that includes a ZIP (or type a ZIP).</Alert>
-              )}
 
               <Divider />
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: "stretch", sm: "center" }}>
-                <Button
-                  variant="contained"
-                  sx={{ bgcolor: "#2E7D32", textTransform: "none", borderRadius: 2, height: 46, "&:hover": { bgcolor: "#1b5e20" } }}
-                  onClick={handleSearch}
-                  disabled={!canSearch}
-                >
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between">
+                <Button variant="contained" onClick={handleSearch} disabled={!canSearch}>
                   Find Reservation
                 </Button>
-                <Button variant="text" sx={{ textTransform: "none" }} onClick={handleClear}>Clear</Button>
+                <Button variant="text" onClick={handleClear}>Clear</Button>
               </Stack>
 
-              <Box sx={{ pt: 0.5 }}>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                  Have an Account?{" "}
-                  <Typography component={Link} to="/login" variant="body2" sx={{ fontWeight: 900, color: "#1A237E", textDecoration: "none" }}>
-                    Sign In.
-                  </Typography>
-                </Typography>
-              </Box>
-
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Chip label="MVP Lookup" size="small" variant="outlined" />
-                <Chip label="Agreement PDF" size="small" variant="outlined" />
-              </Stack>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Have an Account?{" "}
+                <Link to="/login" sx={{ color: "#1A237E" }}>
+                  Sign In.
+                </Link>
+              </Typography>
             </Stack>
           </Box>
         </Paper>
@@ -524,35 +319,26 @@ export default function ManageBookings() {
           {results.length > 0 && (
             <Paper elevation={0} sx={{ borderRadius: 5, border: "1px solid #e6e8ef", bgcolor: "white", overflow: "hidden" }}>
               <Box sx={{ p: isMobile ? 2 : 3 }}>
-                <Typography variant="h6" fontWeight={900} sx={{ mb: 1 }}>Reservations in this Area</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Auto-filtered by City + ZIP (dummy data).</Typography>
-
                 {!isMobile ? (
                   <Table>
                     <TableHead>
                       <TableRow>
                         <TableCell>Car</TableCell>
                         <TableCell>Dates</TableCell>
-                        <TableCell>Locations</TableCell>
                         <TableCell>Status</TableCell>
                         <TableCell>Payment</TableCell>
                         <TableCell align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
+
                     <TableBody>
                       {results.map((b) => (
                         <TableRow key={b.id} hover>
                           <TableCell>
-                            <Stack direction="row" spacing={2} alignItems="center">
-                              <Box component="img" src={b.car.imageUrl} alt={b.car.makeModel} sx={{ width: 80, height: 52, borderRadius: 2, objectFit: "cover" }} />
-                              <Box>
-                                <Typography fontWeight={900}>{b.car.makeModel}</Typography>
-                                <Chip label={b.car.type} size="small" variant="outlined" sx={{ mt: 0.5 }} />
-                                <Typography variant="caption" display="block" sx={{ color: "text.secondary", mt: 0.5 }}>
-                                  #{b.reservationNumber} • ZIP {b.zipCode}
-                                </Typography>
-                              </Box>
-                            </Stack>
+                            <Typography sx={{ fontWeight: 900 }}>{b.car.makeModel}</Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                              #{b.reservationNumber} • ZIP {b.zipCode}
+                            </Typography>
                           </TableCell>
 
                           <TableCell>
@@ -562,24 +348,18 @@ export default function ManageBookings() {
                           </TableCell>
 
                           <TableCell>
-                            <Typography variant="body2">{b.pickupLocation}</Typography>
-                            <Typography variant="body2" color="text.secondary">{b.returnLocation}</Typography>
+                            <Chip label={b.status} color={statusChipColor(b.status)} size="small" />
                           </TableCell>
 
-                          <TableCell><Chip label={b.status} color={statusChipColor(b.status)} size="small" /></TableCell>
-
                           <TableCell>
-                            <Stack spacing={0.5}>
-                              <Chip label={b.paymentStatus} color={paymentChipColor(b.paymentStatus)} size="small" />
-                              <Typography fontWeight={900}>${Number(b.totalAmount).toFixed(2)}</Typography>
-                            </Stack>
+                            <Chip label={b.paymentStatus} color={paymentChipColor(b.paymentStatus)} size="small" />
                           </TableCell>
 
                           <TableCell align="right">
-                            <IconButton title="View Details" onClick={() => openDetails(b)}><Visibility /></IconButton>
-                            <IconButton title="Cancel" onClick={() => cancelReservation(b)} disabled={b.status !== "UPCOMING"}><Cancel /></IconButton>
-                            <IconButton title="Rebook" onClick={() => rebook(b)}><Replay /></IconButton>
-                            <IconButton title="Download Agreement (PDF)" onClick={() => downloadAgreement(b)}><Description /></IconButton>
+                            <IconButton onClick={() => openDetails(b)}><Visibility /></IconButton>
+                            <IconButton onClick={() => cancelReservation(b)} disabled={b.status !== "UPCOMING"}><Cancel /></IconButton>
+                            <IconButton onClick={() => rebook(b)}><Replay /></IconButton>
+                            <IconButton onClick={() => downloadAgreement(b)}><Description /></IconButton>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -590,36 +370,15 @@ export default function ManageBookings() {
                     {results.map((b) => (
                       <Card key={b.id} variant="outlined" sx={{ borderRadius: 4 }}>
                         <CardContent>
-                          <Stack spacing={1.5}>
-                            <Box display="flex" gap={2}>
-                              <Box component="img" src={b.car.imageUrl} alt={b.car.makeModel} sx={{ width: 120, height: 84, borderRadius: 2, objectFit: "cover" }} />
-                              <Box flex={1}>
-                                <Typography fontWeight={900}>{b.car.makeModel}</Typography>
-                                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                                  #{b.reservationNumber} • ZIP {b.zipCode}
-                                </Typography>
-                                <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
-                                  <Chip label={b.car.type} size="small" variant="outlined" />
-                                  <Chip label={b.status} size="small" color={statusChipColor(b.status)} />
-                                  <Chip label={b.paymentStatus} size="small" color={paymentChipColor(b.paymentStatus)} />
-                                </Stack>
-                              </Box>
-                            </Box>
-
-                            <Divider />
-
-                            <Typography variant="body2"><b>Dates:</b> {new Date(b.pickupDate).toLocaleDateString()} → {new Date(b.returnDate).toLocaleDateString()}</Typography>
-                            <Typography variant="body2"><b>Pickup:</b> {b.pickupLocation}</Typography>
-                            <Typography variant="body2"><b>Return:</b> {b.returnLocation}</Typography>
-                            <Typography variant="body2"><b>Total:</b> ${Number(b.totalAmount).toFixed(2)}</Typography>
-                          </Stack>
+                          <Typography sx={{ fontWeight: 900 }}>{b.car.makeModel}</Typography>
+                          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                            {new Date(b.pickupDate).toLocaleDateString()} → {new Date(b.returnDate).toLocaleDateString()}
+                          </Typography>
                         </CardContent>
 
-                        <CardActions sx={{ px: 2, pb: 2, gap: 1, flexWrap: "wrap" }}>
+                        <CardActions>
                           <Button size="small" variant="outlined" onClick={() => openDetails(b)} startIcon={<Visibility />}>Details</Button>
-                          <Button size="small" variant="outlined" color="error" onClick={() => cancelReservation(b)} disabled={b.status !== "UPCOMING"} startIcon={<Cancel />}>Cancel</Button>
-                          <Button size="small" variant="outlined" onClick={() => rebook(b)} startIcon={<Replay />}>Rebook</Button>
-                          <Button size="small" variant="outlined" onClick={() => downloadAgreement(b)} startIcon={<Description />}>Agreement PDF</Button>
+                          <Button size="small" variant="outlined" onClick={() => downloadAgreement(b)} startIcon={<Description />}>Agreement</Button>
                         </CardActions>
                       </Card>
                     ))}

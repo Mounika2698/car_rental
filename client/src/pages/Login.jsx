@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from '../redux/slice/authSlice'
 
-import {
-  Container, Box, Paper, Typography, Link, TextField, Button, Alert, PasswordRulesTooltip
-} from "../components";
+import { Container, Box, Paper, Typography, Link, TextField, Button, Alert } from "../components";
+import { PasswordRulesTooltip } from "../components";
 import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
 
