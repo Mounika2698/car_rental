@@ -1,333 +1,406 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Typography, Button, Container, Box, TextField, Grid, Stack, InputAdornment, Alert } from "@mui/material";
-import { Search, LocationOn } from "@mui/icons-material";
-import Autocomplete from "@mui/material/Autocomplete";
-import CircularProgress from "@mui/material/CircularProgress";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-
-import MuiSelect from "../components/common/Select";
-import { RentalDatePicker } from "../components/common/DatePicker";
-import Header from "../components/common/Header";
-import Footer from "../components/common/Footer";
-import CarCard from "../components/cars/CarCard";
+import { useDispatch, useSelector } from "react-redux";
 import { searchCars } from "../redux/slice/carSlice";
+import CarCard from "../components/cars/CarCard";
+import {
+  Box, Button, Container, Typography, Grid, Alert, Paper, Stack, Chip, Divider,
+  LocationAutocomplete, RentalDatePicker, Select, Header, Footer
+} from "../components";
+import { Search, Bolt, Verified, AttachMoney, SupportAgent, DirectionsCar, LocationOn, EventAvailable, Shield } from "@mui/icons-material";
 
-/**
- * Types must match backend carController.js (ev/luxury/sedan/all)
- */
-const Types = [
+const TYPES = [
   { label: "All types", value: "all" },
   { label: "Electric", value: "ev" },
   { label: "Luxury", value: "luxury" },
   { label: "Sedan", value: "sedan" },
 ];
 
-/**
- * Location helpers for Nominatim jsonv2
- */
-const BAD_CATEGORIES = ["amenity", "tourism", "shop", "leisure", "building", "office", "man_made"];
-const PLACE_TYPES = ["state", "city", "town", "village", "municipality", "suburb", "hamlet", "locality"];
-
-const getZip = (addr) => String(addr?.postcode || "").match(/\b\d{5}\b/)?.[0] || "";
-const getCity = (addr) => addr?.city || addr?.town || addr?.village || addr?.municipality || "";
-const getState = (addr) => addr?.state || addr?.region || "";
-const getDisplayName = (item) => (item?.display_name || "").split(",")[0]?.trim() || "";
-const isZipQuery = (q) => /^\d{5}$/.test(String(q || "").trim());
-
-function useDebouncedValue(value, delayMs = 350) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(t);
-  }, [value, delayMs]);
-  return debounced;
-}
-
-async function reverseLookupAddress(lat, lon, signal) {
-  const rev = new URL("https://nominatim.openstreetmap.org/reverse");
-  rev.searchParams.set("format", "jsonv2");
-  rev.searchParams.set("addressdetails", "1");
-  rev.searchParams.set("lat", String(lat));
-  rev.searchParams.set("lon", String(lon));
-  const r = await fetch(rev.toString(), { signal, headers: { Accept: "application/json" } });
-  if (!r.ok) return null;
-  const revData = await r.json();
-  return revData?.address || null;
-}
-
-function makePrimarySubtitle(item, zipQuery) {
-  const addr = item.address || {};
-  const city = getCity(addr);
-  const state = getState(addr);
-  const zip = getZip(addr);
-  const category = item.category || item.class; // jsonv2 fix
-
-  let primary = "";
-  if (zipQuery) primary = city ? `${city}, ${state} ${zip}`.trim() : `${state} ${zip}`.trim();
-  else if (category === "place" && item.type === "state") primary = state || getDisplayName(item) || "State";
-  else if (category === "aeroway" && item.type === "aerodrome") primary = getDisplayName(item) || "Airport";
-  else primary = city ? `${city}, ${state}`.trim() : (state || getDisplayName(item) || "Location");
-
-  const subtitle = [city, state, zip, "United States"].filter(Boolean).join(", ");
-  return { primary, subtitle, zip };
-}
-
-function extractArea(option) {
-  const addr = option?.raw?.address || {};
-  return { city: getCity(addr), state: getState(addr), zip: getZip(addr) };
-}
+const getArea = (o) => {
+  const a = o?.raw?.address || {};
+  return {
+    city: a.city || a.town || a.village || a.municipality || "",
+    state: a.state || a.region || "",
+    zip: String(a.postcode || "").match(/\b\d{5}\b/)?.[0] || "",
+  };
+};
 
 export default function Home() {
   const dispatch = useDispatch();
-  const { cars = [], loading, error } = useSelector((state) => state.cars || {});
+  const { cars = [], loading, error } = useSelector((s) => s.cars || {});
 
-  const [selectTypes, setSelectTypes] = useState(Types[0].value);
-  const [pickupDate, setPickupDate] = useState(dayjs());
-  const [returnDate, setReturnDate] = useState(dayjs().add(3, "day"));
+  const [type, setType] = useState("all");
+  const [pickup, setPickup] = useState(dayjs());
+  const [drop, setDrop] = useState(dayjs().add(3, "day"));
+  const [locVal, setLocVal] = useState(null);
+  const [locInput, setLocInput] = useState("");
+  const [area, setArea] = useState(null);
+  const [searched, setSearched] = useState(false);
+  const [err, setErr] = useState("");
 
-  // Location autocomplete
-  const [pickupLocationValue, setPickupLocationValue] = useState(null);
-  const [pickupLocationInput, setPickupLocationInput] = useState("");
-  const debouncedPickupLocationInput = useDebouncedValue(pickupLocationInput, 350);
-  const [pickupLocationOptions, setPickupLocationOptions] = useState([]);
-  const [pickupLocationLoading, setPickupLocationLoading] = useState(false);
-  const pickupAbortRef = useRef(null);
-
-  const [selectedArea, setSelectedArea] = useState(null);
-  const [searchClicked, setSearchClicked] = useState(false);
-  const [formError, setFormError] = useState("");
-
-  const handlePickupChange = (newDate) => {
-    setPickupDate(newDate);
-    if (newDate && (newDate.isAfter(returnDate) || newDate.isSame(returnDate, "day"))) setReturnDate(newDate.add(1, "day"));
-  };
-
-  // Location suggestions
   useEffect(() => {
-    const q = debouncedPickupLocationInput.trim();
-    if (q.length < 2) {
-      setPickupLocationOptions([]);
-      setPickupLocationLoading(false);
-      return;
-    }
+    dispatch(searchCars({
+      type: "all",
+      location: "",
+      pickupDate: dayjs().format("YYYY-MM-DD"),
+      returnDate: dayjs().add(30, "day").format("YYYY-MM-DD"),
+    }));
+    setSearched(false);
+  }, [dispatch]);
 
-    if (pickupAbortRef.current) pickupAbortRef.current.abort();
-    const controller = new AbortController();
-    pickupAbortRef.current = controller;
+  const datesValid = useMemo(() => !!pickup && !!drop && dayjs(drop).isAfter(pickup, "day"), [pickup, drop]);
+  const canSearch = !!locVal && !!pickup && !!drop && !!type && datesValid;
 
-    const run = async () => {
-      try {
-        setPickupLocationLoading(true);
-        const zipQuery = isZipQuery(q);
-
-        const url = new URL("https://nominatim.openstreetmap.org/search");
-        url.searchParams.set("format", "jsonv2");
-        url.searchParams.set("addressdetails", "1");
-        url.searchParams.set("countrycodes", "us");
-        url.searchParams.set("limit", "25");
-        url.searchParams.set("q", q);
-
-        const res = await fetch(url.toString(), { signal: controller.signal, headers: { Accept: "application/json" } });
-        const data = res.ok ? await res.json() : [];
-        let list = Array.isArray(data) ? data : [];
-
-        const getCategory = (item) => item.category || item.class;
-
-        list = list.filter((item) => {
-          const cat = getCategory(item);
-          if (BAD_CATEGORIES.includes(cat)) return false;
-          if (cat === "aeroway" && item.type === "aerodrome") return true;
-          if (cat === "place" && PLACE_TYPES.includes(item.type)) return true;
-          if (cat === "boundary" && item.type === "administrative") return true;
-          if (item.type === "postcode") return true;
-          return false;
-        });
-
-        if (zipQuery) {
-          list = list.filter((item) => {
-            const zip = getZip(item.address || {});
-            return zip === q || item.type === "postcode";
-          });
-
-          for (let i = 0; i < Math.min(list.length, 3); i++) {
-            const item = list[i];
-            const addr = item.address || {};
-            const city = getCity(addr);
-            const zip = getZip(addr);
-            if (!city && zip && item.lat && item.lon) {
-              const revAddr = await reverseLookupAddress(item.lat, item.lon, controller.signal);
-              if (revAddr) item.address = { ...addr, ...revAddr };
-            }
-          }
-        }
-
-        const score = (item) => {
-          const cat = getCategory(item);
-          if (cat === "place" && item.type === "city") return 120;
-          if (cat === "place" && item.type === "town") return 115;
-          if (cat === "place" && item.type === "village") return 110;
-          if (cat === "place" && item.type === "state") return 105;
-          if (cat === "aeroway" && item.type === "aerodrome") return 95;
-          if (item.type === "postcode") return 90;
-          if (cat === "boundary" && item.type === "administrative") return 80;
-          return 10;
-        };
-
-        list.sort((a, b) => score(b) - score(a));
-        list = list.slice(0, 10);
-
-        const mapped = list.map((item) => {
-          const { primary, subtitle, zip } = makePrimarySubtitle(item, zipQuery);
-          return { id: String(item.place_id), raw: item, primary, subtitle, zip };
-        });
-
-        setPickupLocationOptions(mapped);
-        setPickupLocationLoading(false);
-      } catch (e) {
-        if (e?.name !== "AbortError") {
-          setPickupLocationOptions([]);
-          setPickupLocationLoading(false);
-        }
-      }
-    };
-
-    run();
-    return () => controller.abort();
-  }, [debouncedPickupLocationInput]);
-
-  // Search triggers backend search API (no auto fetch)
-  const handleSearch = async () => {
-    setFormError("");
-
-    if (!pickupLocationValue) return setFormError("Please select a Pickup Location from the suggestions.");
-    if (!pickupDate || !returnDate) return setFormError("Please select Pickup and Return dates.");
-    if (dayjs(returnDate).isSame(dayjs(pickupDate), "day") || dayjs(returnDate).isBefore(dayjs(pickupDate))) {
-      return setFormError("Return Date must be after Pickup Date.");
-    }
-
-    const area = extractArea(pickupLocationValue);
-    setSelectedArea(area);
-
-    const locationStr = [area.city, area.state, area.zip].filter(Boolean).join(", ");
-
-    await dispatch(
-      searchCars({
-        type: selectTypes,
-        location: locationStr,
-        pickupDate: dayjs(pickupDate).format("YYYY-MM-DD"),
-        returnDate: dayjs(returnDate).format("YYYY-MM-DD"),
-      })
-    );
-
-    setSearchClicked(true);
+  const handlePickup = (d) => {
+    setPickup(d);
+    if (d && !dayjs(drop).isAfter(d, "day")) setDrop(d.add(1, "day"));
   };
 
-  const searchSummary = useMemo(() => {
-    if (!selectedArea) return "";
-    return [selectedArea.city, selectedArea.state, selectedArea.zip].filter(Boolean).join(", ");
-  }, [selectedArea]);
+  const handleSearch = async () => {
+    setErr("");
+    if (!canSearch) return setErr("Please fill all 4 fields correctly (select a location suggestion + valid dates).");
+
+    const a = getArea(locVal);
+    setArea(a);
+
+    const action = await dispatch(searchCars({
+      type,
+      location: [a.city, a.state, a.zip].filter(Boolean).join(", "),
+      pickupDate: pickup.format("YYYY-MM-DD"),
+      returnDate: drop.format("YYYY-MM-DD"),
+    }));
+
+    if (!searchCars.rejected?.match?.(action)) setSearched(true);
+  };
+
+  const searchCtx = area && {
+    pickupLocation: [area.city, area.state, area.zip].filter(Boolean).join(", "),
+    pickupDate: pickup.format("YYYY-MM-DD"),
+    returnDate: drop.format("YYYY-MM-DD"),
+    type,
+  };
+
+  const title = searched ? "Search Results" : "Browse Our Cars";
+  const subtitle = searched && area
+    ? `Showing cars for ${[area.city, area.state, area.zip].filter(Boolean).join(", ")}`
+    : "Browse what we generally have, or search by location + dates for exact availability.";
+
+  const perks = [
+    { icon: <Bolt />, label: "Fast booking", color: "#7c4dff" },
+    { icon: <Verified />, label: "Verified cars", color: "#1A237E" },
+    { icon: <AttachMoney />, label: "Clear pricing", color: "#2E7D32" },
+    { icon: <SupportAgent />, label: "24/7 support", color: "#d81b60" },
+  ];
+
+  const steps = [
+    { icon: <DirectionsCar />, t: "Find the perfect car", d: "Browse options and pick what fits your trip." },
+    { icon: <LocationOn />, t: "Select a pickup location", d: "Choose a city/ZIP suggestion in Texas." },
+    { icon: <EventAvailable />, t: "Book & hit the road", d: "Confirm instantly and drive with confidence." },
+  ];
 
   return (
-    <Box sx={{ flexGrow: 1, bgcolor: "#f5f7fa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f5f7fa" }}>
       <Header />
 
-      <Box sx={{ bgcolor: "#1A237E", py: 10, color: "white" }}>
-        <Container maxWidth="lg">
-          <Typography variant="h2" textAlign="center" gutterBottom sx={{ fontWeight: 800, mb: 4 }}>
-            Rent the future of driving.
-          </Typography>
+      {/* HERO */}
+      <Box
+        sx={{
+          color: "white",
+          py: { xs: 6.5, md: 9 },
+          background: "linear-gradient(135deg, #0b1a66 0%, #1A237E 35%, #2E7D32 120%)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            "&:before": {
+              content: '""',
+              position: "absolute",
+              width: 420,
+              height: 420,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(124,77,255,0.55), transparent 60%)",
+              filter: "blur(25px)",
+              top: -160,
+              right: -150,
+            },
+            "&:after": {
+              content: '""',
+              position: "absolute",
+              width: 420,
+              height: 420,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(216,27,96,0.45), transparent 60%)",
+              filter: "blur(28px)",
+              bottom: -170,
+              left: -170,
+            },
+          }}
+        />
 
-          {formError && <Alert severity="warning" sx={{ mb: 2 }}>{formError}</Alert>}
+        <Container maxWidth="lg" sx={{ position: "relative" }}>
+          <Stack spacing={2} sx={{ mb: 3.5, alignItems: "center" }}>
+            <Typography
+              sx={{
+                fontWeight: 1000,
+                letterSpacing: -1,
+                fontSize: { xs: 34, sm: 46, md: 58 },
+                lineHeight: 1.05,
+                textAlign: "center",
+                width: "100%",
+              }}
+            >
+              Your next drive, <span style={{ color: "#B2FF59" }}>simplified.</span>
+            </Typography>
 
-          <Box sx={{ bgcolor: "white", p: 3, borderRadius: 6, border: "1px solid #ffffff33", maxWidth: 1100, mx: "auto", overflow: "hidden" }}>
-            <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, alignItems: "flex-start", width: "100%" }}>
-              <Box sx={{ flex: 3, minWidth: { xs: "100%", md: 200 } }}>
-                <Autocomplete
-                  sx={{ width: "100%" }}
-                  fullWidth
-                  options={pickupLocationOptions}
-                  value={pickupLocationValue}
-                  inputValue={pickupLocationInput}
-                  onInputChange={(e, v) => setPickupLocationInput(v)}
-                  onChange={(e, v) => setPickupLocationValue(v)}
-                  loading={pickupLocationLoading}
-                  filterOptions={(x) => x}
-                  getOptionLabel={(o) => o?.primary || ""}
-                  isOptionEqualToValue={(a, b) => a?.id === b?.id}
-                  noOptionsText={debouncedPickupLocationInput.trim().length < 2 ? "Type your location..." : "No locations found"}
-                  renderInput={(p) => (
-                    <TextField
-                      {...p}
-                      helperText="Pickup Location"
-                      placeholder="City, ZIP, or Airport"
-                      sx={{
-                        bgcolor: "white",
-                        borderRadius: 2,
-                        "& .MuiInputBase-root": { height: 60, fontSize: "1.05rem" },
-                        "& input": { py: "18px" },
-                        "& .MuiAutocomplete-input": { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-                      }}
-                      InputProps={{
-                        ...p.InputProps,
-                        startAdornment: <InputAdornment position="start"><LocationOn sx={{ color: "gray" }} /></InputAdornment>,
-                        endAdornment: <>
-                          {pickupLocationLoading && <CircularProgress size={18} />}
-                          {p.InputProps.endAdornment}
-                        </>,
-                      }}
-                    />
-                  )}
-                  renderOption={(props, o) => (
-                    <li {...props} key={o.id} style={{ padding: 12 }}>
-                      <Typography fontWeight={800}>{o.primary}</Typography>
-                      <Typography variant="body2" color="text.secondary">{o.subtitle}</Typography>
-                    </li>
-                  )}
+            {/* ✅ HARD CENTER FIX: width 100% + textAlign center + block */}
+            <Typography
+              component="div"
+              sx={{
+                width: "100%",
+                textAlign: "center",
+                display: "block",
+                opacity: 0.95,
+                maxWidth: 900,
+                mx: "auto",
+                fontSize: { xs: 14, md: 16 },
+                lineHeight: 1.7,
+              }}
+            >
+              DRIVEFLOW helps you find the right car in seconds — clear pricing, verified cars,
+              and quick pickup across Texas.
+            </Typography>
+
+            <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" useFlexGap sx={{ width: "100%" }}>
+              <Chip icon={<Verified />} label="Verified cars" sx={{ bgcolor: "#ffffff18", color: "white", border: "1px solid #ffffff22", fontWeight: 900 }} />
+              <Chip icon={<Bolt />} label="Instant booking" sx={{ bgcolor: "#ffffff18", color: "white", border: "1px solid #ffffff22", fontWeight: 900 }} />
+              <Chip icon={<Shield />} label="Secure checkout" sx={{ bgcolor: "#ffffff18", color: "white", border: "1px solid #ffffff22", fontWeight: 900 }} />
+            </Stack>
+          </Stack>
+
+          {err && <Alert severity="warning" sx={{ maxWidth: 1100, mx: "auto", mb: 2 }}>{err}</Alert>}
+
+          {/* SEARCH CARD */}
+          <Paper
+            elevation={0}
+            sx={{
+              maxWidth: 1100,
+              mx: "auto",
+              p: { xs: 2, md: 3 },
+              borderRadius: 6,
+              border: "1px solid #ffffff2a",
+              background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.99))",
+              boxShadow: "0 22px 44px rgba(0,0,0,0.25)",
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, alignItems: "stretch" }}>
+              <Box sx={{ flex: 3, minWidth: { xs: "100%", md: 280 } }}>
+                <LocationAutocomplete
+                  label="Pickup Location"
+                  placeholder="City, ZIP, or Airport"
+                  value={locVal}
+                  inputValue={locInput}
+                  onChange={setLocVal}
+                  onInputChange={(e, v) => setLocInput(v)}
+                  minChars={2}
+                  limit={10}
                 />
               </Box>
 
-              <Box sx={{ flex: 1.4, minWidth: { xs: "100%", md: 230 } }}>
-                <RentalDatePicker label="Pickup Date" value={pickupDate} onChange={handlePickupChange} minDate={dayjs()} />
+              <Box sx={{ flex: 1.2, minWidth: { xs: "100%", md: 220 } }}>
+                <RentalDatePicker label="Pickup" value={pickup} onChange={handlePickup} minDate={dayjs()} />
               </Box>
 
-              <Box sx={{ flex: 1.4, minWidth: { xs: "100%", md: 230 } }}>
-                <RentalDatePicker label="Return Date" value={returnDate} onChange={setReturnDate} minDate={pickupDate?.add(1, "day")} />
+              <Box sx={{ flex: 1.2, minWidth: { xs: "100%", md: 220 } }}>
+                <RentalDatePicker label="Return" value={drop} onChange={setDrop} minDate={pickup.add(1, "day")} />
               </Box>
 
-              <Box sx={{ flex: 1, minWidth: { xs: "100%", md: 170 } }}>
-                <MuiSelect label="Types" value={selectTypes} onChange={(e) => setSelectTypes(e.target.value)} options={Types} required />
+              <Box sx={{ flex: 1, minWidth: { xs: "100%", md: 190 } }}>
+                <Select label="Type" value={type} onChange={(e) => setType(e.target.value)} options={TYPES} />
               </Box>
 
-              <Box sx={{ width: { xs: "100%", md: 72 } }}>
-                <Button fullWidth variant="contained" onClick={handleSearch} sx={{ height: 60, bgcolor: "#2E7D32", borderRadius: 2, "&:hover": { bgcolor: "#1b5e20" } }}>
-                  <Search />
-                </Button>
-              </Box>
+              <Button
+                variant="contained"
+                onClick={handleSearch}
+                disabled={!canSearch || loading}
+                sx={{
+                  height: 60,
+                  minWidth: 80,
+                  borderRadius: 3,
+                  fontWeight: 950,
+                  backgroundImage: "linear-gradient(135deg, #2E7D32 0%, #00C853 55%, #1A237E 140%)",
+                  boxShadow: "0 14px 30px rgba(0,200,83,0.22)",
+                  "&:hover": { filter: "brightness(1.05)" },
+                  "&.Mui-disabled": { bgcolor: "#9e9e9e", color: "#fff" },
+                }}
+                aria-label="Search"
+              >
+                <Search />
+              </Button>
             </Box>
-          </Box>
+
+            <Typography variant="caption" sx={{ display: "block", mt: 1.5, color: "text.secondary" }}>
+              Tip: Choose a dropdown suggestion for best results.
+            </Typography>
+          </Paper>
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: 6, flexGrow: 1 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Available for You</Typography>
-        <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
-          {!searchClicked ? "Enter your details and click Search to see available cars." : searchSummary ? `Showing cars for: ${searchSummary}` : "Showing cars for your search."}
-        </Typography>
+      {/* LISTING */}
+      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 5 }, flexGrow: 1 }}>
+        <Stack spacing={0.8} mb={2.5}>
+          <Typography variant="h4" fontWeight={1000} sx={{ letterSpacing: -0.6 }}>
+            {title}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            {subtitle}
+          </Typography>
+        </Stack>
 
-        {!searchClicked ? null : loading ? (
-          <Typography>Loading cars...</Typography>
+        {/* ✅ ALL CARS FIRST */}
+        {loading ? (
+          <Typography>Loading cars…</Typography>
         ) : error ? (
           <Typography color="error">{String(error)}</Typography>
-        ) : (
+        ) : cars.length ? (
           <Grid container spacing={4}>
-            {cars?.map((car) => (
-              <Grid item key={car._id} xs={12} sm={6} md={4}>
-                <CarCard car={car} />
+            {cars.map((c) => (
+              <Grid item xs={12} sm={6} md={4} key={c._id}>
+                <CarCard car={c} searchContext={searched ? searchCtx : null} />
               </Grid>
             ))}
           </Grid>
+        ) : (
+          <Alert severity="info">No cars available.</Alert>
         )}
+
+        {/* ✅ CONTEXT + HOW IT WORKS BELOW THE LIST */}
+        <Box sx={{ mt: { xs: 4, md: 5 } }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 2.5, md: 4 },
+              borderRadius: 6,
+              border: "1px solid #e6e8ef",
+              background:
+                "linear-gradient(135deg, rgba(26,35,126,0.08) 0%, rgba(46,125,50,0.08) 45%, rgba(216,27,96,0.08) 100%)",
+              boxShadow: "0 18px 35px rgba(20,30,60,0.10)",
+              position: "relative",
+              overflow: "hidden",
+              "&:before": {
+                content: '""',
+                position: "absolute",
+                inset: -120,
+                background:
+                  "radial-gradient(circle at 20% 20%, rgba(124,77,255,0.22), transparent 40%), radial-gradient(circle at 80% 30%, rgba(46,125,50,0.18), transparent 45%), radial-gradient(circle at 60% 80%, rgba(216,27,96,0.18), transparent 45%)",
+                filter: "blur(18px)",
+                pointerEvents: "none",
+              },
+            }}
+          >
+            <Box sx={{ position: "relative" }}>
+              <Stack spacing={1.2} sx={{ textAlign: "center" }}>
+                <Typography variant="h4" fontWeight={950} sx={{ letterSpacing: -0.6, width: "100%" }}>
+                  Why DRIVEFLOW?
+                </Typography>
+
+                <Typography
+                  sx={{
+                    color: "text.secondary",
+                    maxWidth: 860,
+                    mx: "auto",
+                    textAlign: "center",
+                    lineHeight: 1.7,
+                    width: "100%",
+                  }}
+                >
+                  Book in minutes with verified cars, clear pricing, and quick pickups across Texas.
+                  No clutter. No confusion. Just drive.
+                </Typography>
+
+                <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                  <Chip icon={<Shield />} label="Secure checkout" sx={{ bgcolor: "white", fontWeight: 900 }} />
+                  <Chip icon={<Verified />} label="Trusted listings" sx={{ bgcolor: "white", fontWeight: 900 }} />
+                  <Chip icon={<Bolt />} label="Instant booking" sx={{ bgcolor: "white", fontWeight: 900 }} />
+                </Stack>
+              </Stack>
+
+              <Divider sx={{ my: 3, opacity: 0.6 }} />
+
+              <Grid container spacing={2.5}>
+                {perks.map((p) => (
+                  <Grid item xs={12} sm={6} md={3} key={p.label}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2.2,
+                        borderRadius: 4,
+                        bgcolor: "white",
+                        borderColor: "#e6e8ef",
+                        transition: "transform 160ms ease, box-shadow 160ms ease",
+                        "&:hover": { transform: "translateY(-3px)", boxShadow: "0 16px 28px rgba(20,30,60,0.12)" },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2.5,
+                            display: "grid",
+                            placeItems: "center",
+                            bgcolor: `${p.color}18`,
+                            color: p.color,
+                          }}
+                        >
+                          {p.icon}
+                        </Box>
+                        <Typography fontWeight={950}>{p.label}</Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
+                        Built for speed, simplicity, and trust.
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+
+              <Typography variant="h5" fontWeight={950} sx={{ mt: 4, textAlign: "center" }}>
+                How it works
+              </Typography>
+
+              <Grid container spacing={2.5} sx={{ mt: 1 }}>
+                {steps.map((s) => (
+                  <Grid item xs={12} md={4} key={s.t}>
+                    <Paper
+                      sx={{
+                        p: 2.6,
+                        borderRadius: 4,
+                        bgcolor: "rgba(255,255,255,0.88)",
+                        border: "1px solid #ffffffaa",
+                        boxShadow: "0 12px 26px rgba(20,30,60,0.10)",
+                        transition: "transform 160ms ease",
+                        "&:hover": { transform: "translateY(-3px)" },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                        <Box sx={{ color: "#1A237E" }}>{s.icon}</Box>
+                        <Typography fontWeight={950}>{s.t}</Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
+                        {s.d}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          </Paper>
+        </Box>
       </Container>
 
       <Footer />

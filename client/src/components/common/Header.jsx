@@ -60,7 +60,7 @@ const Header = () => {
 
   const navigationItems = [
     { label: "Book", path: "/", show: !isAuthPage },
-    { label: "Manage Bookings", path: "/Dashboard", show: !isAuthPage },
+    { label: "Manage Bookings", path: "/manage-bookings", show: !isAuthPage },
     { label: "Location", path: "/", show: !isAuthPage },
     { label: "Support", path: "/", show: !isAuthPage },
   ];
