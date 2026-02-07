@@ -16,6 +16,13 @@ const TYPES = [
   { label: "Sedan", value: "sedan" },
 ];
 
+const DEFAULT_HOUSTON = {
+  id: "houston-tx-77001",
+  primary: "Houston, TX 77001",
+  subtitle: "Houston, Texas",
+  raw: { address: { city: "Houston", state: "TX", postcode: "77001" } },
+};
+
 const getArea = (o) => {
   const a = o?.raw?.address || {};
   return {
@@ -32,18 +39,19 @@ export default function Home() {
   const [type, setType] = useState("all");
   const [pickup, setPickup] = useState(dayjs());
   const [drop, setDrop] = useState(dayjs().add(3, "day"));
-  const [locVal, setLocVal] = useState(null);
-  const [locInput, setLocInput] = useState("");
   const [area, setArea] = useState(null);
   const [searched, setSearched] = useState(false);
   const [err, setErr] = useState("");
+  const [locVal, setLocVal] = useState(DEFAULT_HOUSTON);
+  const [locInput, setLocInput] = useState(DEFAULT_HOUSTON.primary);
+
 
   useEffect(() => {
     dispatch(searchCars({
       type: "all",
-      location: "",
-      pickupDate: dayjs().format("YYYY-MM-DD"),
-      returnDate: dayjs().add(30, "day").format("YYYY-MM-DD"),
+      location: "Houston, TX 77001",
+      pickupDate: dayjs().format("MM/DD/YYYY"),
+      returnDate: dayjs().add(30, "day").format("MM/DD/YYYY"),
     }));
     setSearched(false);
   }, [dispatch]);
@@ -66,8 +74,8 @@ export default function Home() {
     const action = await dispatch(searchCars({
       type,
       location: [a.city, a.state, a.zip].filter(Boolean).join(", "),
-      pickupDate: pickup.format("YYYY-MM-DD"),
-      returnDate: drop.format("YYYY-MM-DD"),
+      pickupDate: pickup.format("MM/DD/YYYY"),
+      returnDate: drop.format("MM/DD/YYYY"),
     }));
 
     if (!searchCars.rejected?.match?.(action)) setSearched(true);

@@ -33,3 +33,5 @@ export { default as LocationOn } from "./common/LocationOn";
 export { default as Select } from "./common/Select";
 export * from "./common/Table"; 
 export * from "./common/Dialog"; 
+export { default as CarCard } from "./cars/CarCard";
+export { default as HowItWorksJourney } from "./cars/HowItWorksJourney";
