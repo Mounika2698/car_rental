@@ -35,3 +35,5 @@ export * from "./common/Table";
 export * from "./common/Dialog"; 
 export { default as CarCard } from "./cars/CarCard";
 export { default as HowItWorksJourney } from "./cars/HowItWorksJourney";
+export { default as SmartAssistantWidget } from "./assistant/SmartAssistantWidget";
+
