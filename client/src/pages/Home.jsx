@@ -5,7 +5,7 @@ import { searchCars } from "../redux/slice/carSlice";
 import CarCard from "../components/cars/CarCard";
 import {
   Box, Button, Container, Typography, Grid, Alert, Paper, Stack, Chip, Divider,
-  LocationAutocomplete, RentalDatePicker, Select, Header, Footer
+  LocationAutocomplete, RentalDatePicker, Select, Header, Footer, SmartAssistantWidget
 } from "../components";
 import { Search, Bolt, Verified, AttachMoney, SupportAgent, DirectionsCar, LocationOn, EventAvailable, Shield } from "@mui/icons-material";
 
@@ -410,7 +410,7 @@ export default function Home() {
           </Paper>
         </Box>
       </Container>
-
+       <SmartAssistantWidget />
       <Footer />
     </Box>
   );
