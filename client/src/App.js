@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import Dashboard from './pages/Dashboard'
 import ManageBooking from "./pages/ManageBooking";
 import Booking from './pages/Booking'
+import LocationPage from "./pages/Location";
+import "leaflet/dist/leaflet.css";
 
 const App = () => {
   return (
@@ -18,6 +20,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={<Home />} />
+        <Route path="/location" element={<LocationPage />} />
         <Route path="/book/:carId" element={<Booking />} />
         {/* Producted routes */}
         <Route path="/Dashboard" element={
